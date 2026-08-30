@@ -29,6 +29,7 @@ type Repository interface {
 	CreateGrant(context.Context, sqlx.ExtContext, Grant) error
 	UpdateGrant(context.Context, sqlx.ExtContext, Grant, int64) error
 	ListGrants(context.Context, string, bool, time.Time, int, int) ([]Grant, []Application, int64, error)
+	ListActiveGrantsByApplication(context.Context, sqlx.ExtContext, string, time.Time) ([]Grant, error)
 	BatchActiveGrants(context.Context, string, []string, time.Time) (map[string]bool, error)
 	AddOutbox(context.Context, sqlx.ExtContext, OutboxEvent) error
 }
@@ -187,6 +188,11 @@ func (r *SQLRepository) ListGrants(ctx context.Context, tenantID string, active 
 		apps = append(apps, app)
 	}
 	return grants, apps, total, nil
+}
+func (r *SQLRepository) ListActiveGrantsByApplication(ctx context.Context, e sqlx.ExtContext, appID string, at time.Time) ([]Grant, error) {
+	items := []Grant{}
+	err := sqlx.SelectContext(ctx, e, &items, r.db.Rebind(`SELECT `+grantColumns+` FROM tenant_application_grants WHERE application_id=? AND status='active' AND valid_from<=? AND (valid_until IS NULL OR valid_until>?) ORDER BY tenant_id`), appID, at, at)
+	return items, err
 }
 func (r *SQLRepository) BatchActiveGrants(ctx context.Context, tenantID string, ids []string, at time.Time) (map[string]bool, error) {
 	out := map[string]bool{}

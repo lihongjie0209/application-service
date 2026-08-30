@@ -18,8 +18,10 @@ import (
 	"github.com/lihongjie0209/application-service/internal/principal"
 	platformevents "github.com/lihongjie0209/microservice-platform-go/eventbus"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
+	searchv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/search/v1"
 	"go.uber.org/fx"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type ApplicationInput struct {
@@ -82,7 +84,19 @@ func (s *Service) UpdateApplication(ctx context.Context, id string, in Applicati
 			return err
 		}
 		v.Version = expected + 1
-		return s.addEvent(ctx, tx, "platform.application.catalog.changed.v1", "platform.application.v1.ApplicationChanged", v.ID, "application", "", actor, v.UpdatedAt, &applicationv1.ApplicationChangedEvent{Application: toProtoApplication(v), ChangeType: "updated"})
+		if err := s.addEvent(ctx, tx, "platform.application.catalog.changed.v1", "platform.application.v1.ApplicationChanged", v.ID, "application", "", actor, v.UpdatedAt, &applicationv1.ApplicationChangedEvent{Application: toProtoApplication(v), ChangeType: "updated"}); err != nil {
+			return err
+		}
+		grants, err := s.repository.ListActiveGrantsByApplication(ctx, tx, v.ID, v.UpdatedAt)
+		if err != nil {
+			return err
+		}
+		for _, grant := range grants {
+			if err := s.addSearchProjectionEvent(ctx, tx, v, grant, actor, v.UpdatedAt); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	return v, translate(err)
 }
@@ -235,7 +249,8 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 	if tenantID == "" || appID == "" {
 		return Grant{}, apperror.Invalid("tenant_id and application_id are required", nil)
 	}
-	if _, err = s.repository.GetApplication(ctx, appID); err != nil {
+	application, err := s.repository.GetApplication(ctx, appID)
+	if err != nil {
 		return Grant{}, translate(err)
 	}
 	if from.IsZero() {
@@ -273,7 +288,10 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 			}
 			current.Version = expected + 1
 		}
-		return s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", current.ID, "tenant_application_grant", tenantID, actor, now, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(current), ChangeType: "granted"})
+		if err := s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", current.ID, "tenant_application_grant", tenantID, actor, now, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(current), ChangeType: "granted"}); err != nil {
+			return err
+		}
+		return s.addSearchProjectionEvent(ctx, tx, application, current, actor, now)
 	})
 	return current, translate(err)
 }
@@ -286,15 +304,53 @@ func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected i
 	if err != nil {
 		return Grant{}, translate(err)
 	}
+	application, err := s.repository.GetApplication(ctx, appID)
+	if err != nil {
+		return Grant{}, translate(err)
+	}
 	v.Status, v.UpdatedAt, v.UpdatedBy = "revoked", s.now(), actor
 	err = s.transactor.Within(ctx, nil, func(tx *sqlx.Tx) error {
 		if err := s.repository.UpdateGrant(ctx, tx, v, expected); err != nil {
 			return err
 		}
 		v.Version = expected + 1
-		return s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", v.ID, "tenant_application_grant", tenantID, actor, v.UpdatedAt, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(v), ChangeType: "revoked"})
+		if err := s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", v.ID, "tenant_application_grant", tenantID, actor, v.UpdatedAt, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(v), ChangeType: "revoked"}); err != nil {
+			return err
+		}
+		key := &searchv1.DocumentKey{TenantId: tenantID, SourceService: "application-service", DocumentType: "application", SourceId: application.ID, SourceVersion: searchProjectionVersion(application.Version, v.Version)}
+		return s.addEvent(ctx, tx, "platform.search.document.deleted.v1", "platform.search.document.deleted.v1", application.ID, "search_document", tenantID, actor, v.UpdatedAt, &searchv1.SearchDocumentDeletedEvent{Document: key})
 	})
 	return v, translate(err)
+}
+func (s *Service) addSearchProjectionEvent(ctx context.Context, tx *sqlx.Tx, application Application, grant Grant, actor string, at time.Time) error {
+	document := searchDocument(application, grant)
+	return s.addEvent(ctx, tx, "platform.search.document.upserted.v1", "platform.search.document.upserted.v1", application.ID, "search_document", grant.TenantID, actor, at, &searchv1.SearchDocumentUpsertedEvent{Document: document})
+}
+
+func searchDocument(application Application, grant Grant) *searchv1.SearchDocument {
+	return &searchv1.SearchDocument{
+		TenantId:         grant.TenantID,
+		SourceService:    "application-service",
+		DocumentType:     "application",
+		SourceId:         application.ID,
+		ApplicationId:    application.ID,
+		Title:            application.Name,
+		Summary:          application.Description,
+		Url:              application.DefaultRoute,
+		Icon:             application.Icon,
+		Keywords:         []string{application.Code, application.Name},
+		VisibilityTokens: []string{"tenant:" + grant.TenantID + ":*"},
+		SourceVersion:    searchProjectionVersion(application.Version, grant.Version),
+		SourceCreatedAt:  timestamppb.New(application.CreatedAt),
+		SourceUpdatedAt:  timestamppb.New(application.UpdatedAt),
+	}
+}
+
+// searchProjectionVersion orders both application catalog and tenant grant changes.
+// Database versions are positive int64 values; practical service lifetimes remain
+// well below the 32-bit component boundary.
+func searchProjectionVersion(applicationVersion, grantVersion int64) int64 {
+	return applicationVersion<<32 | grantVersion&0xffffffff
 }
 func (s *Service) ListTenantApplications(ctx context.Context, tenantID string, active bool, page, pageSize int) (Page[Grant], []Application, error) {
 	page, pageSize, err := pagination(page, pageSize)
