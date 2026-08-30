@@ -1,0 +1,24 @@
+app:
+  env: compose
+log:
+  level: debug
+  file: /app/logs/app.log
+swagger:
+  enabled: true
+  require_auth: true
+database:
+  name: platform
+  schema: application
+grpc:
+  reflection_enabled: true
+cron:
+  enabled: false
+auth:
+  jwks_url: http://identity-service:8080/.well-known/jwks.json
+  issuer: identity-service
+  audience: application-service
+event_bus:
+  enabled: true
+  urls: [nats://nats:4222]
+  stream_name: PLATFORM_EVENTS
+  subjects: [platform.>]
