@@ -485,6 +485,9 @@ func (c Config) Validate() error {
 	if c.App.Env == "production" && c.Swagger.Enabled && !c.Swagger.RequireAuth {
 		return errors.New("swagger.require_auth must be enabled in production")
 	}
+	if c.App.Env == "production" && (strings.TrimSpace(c.Auth.JWKSURL) == "" || strings.TrimSpace(c.Auth.Issuer) == "" || strings.TrimSpace(c.Auth.Audience) == "") {
+		return errors.New("production auth requires JWKS URL, issuer, and audience")
+	}
 	if (c.Auth.ClientID != "" || c.Auth.ClientSecret != "") && len(c.JWT.Secret) < 32 {
 		return errors.New("jwt.secret must contain at least 32 bytes when auth is enabled")
 	}

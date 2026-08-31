@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -91,6 +92,21 @@ func TestLoad_UsesCanonicalPlatformEventStream(t *testing.T) {
 	}
 	if cfg.EventBus.PublishedRetention != 7*24*time.Hour || cfg.EventBus.CleanupInterval != time.Hour || cfg.EventBus.CleanupBatchSize != 1000 {
 		t.Fatalf("unexpected outbox cleanup defaults: %+v", cfg.EventBus)
+	}
+}
+
+func TestConfig_ProductionRequiresIdentityJWKS(t *testing.T) {
+	cfg, err := Load("../../config/config.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.App.Env = "production"
+	cfg.GRPC.Enabled = false
+	cfg.GRPC.ReflectionEnabled = false
+	cfg.Swagger.RequireAuth = true
+	cfg.Auth.JWKSURL = ""
+	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "production auth requires JWKS") {
+		t.Fatalf("Validate() error = %v, want production JWKS requirement", err)
 	}
 }
 
