@@ -7,6 +7,7 @@ import (
 	"github.com/lihongjie0209/application-service/internal/auth"
 	"github.com/lihongjie0209/application-service/internal/config"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
+	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -43,6 +44,34 @@ func TestAuthenticateGRPC_PSKWildcard(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestApplicationGRPCRequirementCoversEveryBusinessMethod(t *testing.T) {
+	t.Parallel()
+	resolve := applicationGRPCRequirement(true)
+	methods := []string{
+		applicationv1.ApplicationService_CreateApplication_FullMethodName,
+		applicationv1.ApplicationService_UpdateApplication_FullMethodName,
+		applicationv1.ApplicationService_GetApplication_FullMethodName,
+		applicationv1.ApplicationService_ListApplications_FullMethodName,
+		applicationv1.ApplicationService_UpsertMenu_FullMethodName,
+		applicationv1.ApplicationService_DeleteMenu_FullMethodName,
+		applicationv1.ApplicationService_ListMenuDraft_FullMethodName,
+		applicationv1.ApplicationService_PublishMenus_FullMethodName,
+		applicationv1.ApplicationService_GetPublishedNavigation_FullMethodName,
+		applicationv1.ApplicationService_GrantTenantApplication_FullMethodName,
+		applicationv1.ApplicationService_RevokeTenantApplication_FullMethodName,
+		applicationv1.ApplicationService_ListTenantApplications_FullMethodName,
+		applicationv1.ApplicationService_BatchCheckTenantApplications_FullMethodName,
+	}
+	for _, method := range methods {
+		if requirement, ok := resolve(method); !ok || requirement.Resource == "" || requirement.Action == "" {
+			t.Fatalf("method %q requirement = %+v, %v", method, requirement, ok)
+		}
+	}
+	if _, ok := applicationGRPCRequirement(false)(methods[0]); ok {
+		t.Fatal("disabled authorization must not call the decision service")
 	}
 }
 

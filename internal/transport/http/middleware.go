@@ -2,6 +2,7 @@ package httptransport
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"mime"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 	"github.com/lihongjie0209/application-service/internal/observability"
 	appLimit "github.com/lihongjie0209/application-service/internal/ratelimit"
 	"github.com/lihongjie0209/application-service/internal/requestid"
+	platformauthz "github.com/lihongjie0209/microservice-platform-go/authz"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -219,9 +221,49 @@ func JWT(service *auth.Service, logger *slog.Logger) gin.HandlerFunc {
 			return
 		}
 		c.Set("subject", identity.ID)
-		c.Request = c.Request.WithContext(principal.WithContext(c.Request.Context(), identity))
+		ctx := principal.WithContext(c.Request.Context(), identity)
+		c.Request = c.Request.WithContext(platformauthz.WithCallerCredential(ctx, header))
 		c.Next()
 	}
+}
+
+func Authorization(enabled bool, authorizer platformauthz.Authorizer, logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		requirement, protected := applicationHTTPRequirement(c.FullPath())
+		if !enabled || !protected {
+			c.Next()
+			return
+		}
+		if err := platformauthz.Enforce(c.Request.Context(), authorizer, requirement); err != nil {
+			if errors.Is(err, platformauthz.ErrDecisionUnavailable) {
+				Fail(c, logger, apperror.Unavailable("authorization decision is unavailable", err))
+				return
+			}
+			Fail(c, logger, apperror.Forbidden("permission denied"))
+			return
+		}
+		c.Next()
+	}
+}
+
+func applicationHTTPRequirement(route string) (platformauthz.Requirement, bool) {
+	requirements := map[string]platformauthz.Requirement{
+		"/api/v1/applications/create":                    {Resource: "application.catalog", Action: "create"},
+		"/api/v1/applications/update":                    {Resource: "application.catalog", Action: "update"},
+		"/api/v1/applications/get":                       {Resource: "application.catalog", Action: "read"},
+		"/api/v1/applications/list":                      {Resource: "application.catalog", Action: "list"},
+		"/api/v1/applications/menus/upsert":              {Resource: "application.menu", Action: "update"},
+		"/api/v1/applications/menus/delete":              {Resource: "application.menu", Action: "delete"},
+		"/api/v1/applications/menus/draft/list":          {Resource: "application.menu", Action: "list"},
+		"/api/v1/applications/menus/publish":             {Resource: "application.menu", Action: "publish"},
+		"/api/v1/applications/navigation/get":            {Resource: "application.navigation", Action: "read"},
+		"/api/v1/applications/tenant-grants/grant":       {Resource: "application.grant", Action: "grant"},
+		"/api/v1/applications/tenant-grants/revoke":      {Resource: "application.grant", Action: "revoke"},
+		"/api/v1/applications/tenant-grants/list":        {Resource: "application.grant", Action: "list"},
+		"/api/v1/applications/tenant-grants/batch-check": {Resource: "application.grant", Action: "check"},
+	}
+	requirement, ok := requirements[route]
+	return requirement, ok
 }
 
 func Authentication(service *auth.Service, logger *slog.Logger, cfg config.Auth) gin.HandlerFunc {

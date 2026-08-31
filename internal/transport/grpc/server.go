@@ -21,6 +21,7 @@ import (
 	"github.com/lihongjie0209/application-service/internal/idempotency"
 	"github.com/lihongjie0209/application-service/internal/observability"
 	"github.com/lihongjie0209/application-service/internal/requestid"
+	platformauthz "github.com/lihongjie0209/microservice-platform-go/authz"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
 
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
@@ -42,11 +43,11 @@ type Server struct {
 	logger  *slog.Logger
 }
 
-func NewServer(lc fx.Lifecycle, cfg config.Config, authService *auth.Service, healthService *apphealth.Service, applicationService *applicationdomain.Service, metrics *observability.Metrics, logger *slog.Logger) (*Server, error) {
+func NewServer(lc fx.Lifecycle, cfg config.Config, authService *auth.Service, authorizer platformauthz.Authorizer, healthService *apphealth.Service, applicationService *applicationdomain.Service, metrics *observability.Metrics, logger *slog.Logger) (*Server, error) {
 	options := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(cfg.GRPC.MaxReceiveBytes),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		grpc.ChainUnaryInterceptor(environmentInterceptor(cfg.Runtime.ActiveProfile), requestIDInterceptor, idempotencyInterceptor, recoveryInterceptor(logger), authInterceptor(authService, cfg.Auth), errorMappingInterceptor, metricsInterceptor(metrics, logger)),
+		grpc.ChainUnaryInterceptor(environmentInterceptor(cfg.Runtime.ActiveProfile), requestIDInterceptor, idempotencyInterceptor, recoveryInterceptor(logger), authInterceptor(authService, cfg.Auth), platformauthz.UnaryServerInterceptor(authorizer, applicationGRPCRequirement(cfg.Authorization.Enabled)), errorMappingInterceptor, metricsInterceptor(metrics, logger)),
 		grpc.ChainStreamInterceptor(environmentStreamInterceptor(cfg.Runtime.ActiveProfile), requestIDStreamInterceptor, idempotencyStreamInterceptor, recoveryStreamInterceptor(logger), authStreamInterceptor(authService, cfg.Auth), metricsStreamInterceptor(metrics, logger)),
 	}
 	if cfg.GRPC.TLS.Enabled {
@@ -65,6 +66,31 @@ func NewServer(lc fx.Lifecycle, cfg config.Config, authService *auth.Service, he
 	server := &Server{server: grpcServer, address: cfg.GRPC.Address, logger: logger}
 	lc.Append(fx.Hook{OnStart: server.start(cfg.GRPC.Enabled), OnStop: server.stop})
 	return server, nil
+}
+
+func applicationGRPCRequirement(enabled bool) platformauthz.GRPCResolver {
+	return func(method string) (platformauthz.Requirement, bool) {
+		if !enabled {
+			return platformauthz.Requirement{}, false
+		}
+		requirements := map[string]platformauthz.Requirement{
+			applicationv1.ApplicationService_CreateApplication_FullMethodName:            {Resource: "application.catalog", Action: "create"},
+			applicationv1.ApplicationService_UpdateApplication_FullMethodName:            {Resource: "application.catalog", Action: "update"},
+			applicationv1.ApplicationService_GetApplication_FullMethodName:               {Resource: "application.catalog", Action: "read"},
+			applicationv1.ApplicationService_ListApplications_FullMethodName:             {Resource: "application.catalog", Action: "list"},
+			applicationv1.ApplicationService_UpsertMenu_FullMethodName:                   {Resource: "application.menu", Action: "update"},
+			applicationv1.ApplicationService_DeleteMenu_FullMethodName:                   {Resource: "application.menu", Action: "delete"},
+			applicationv1.ApplicationService_ListMenuDraft_FullMethodName:                {Resource: "application.menu", Action: "list"},
+			applicationv1.ApplicationService_PublishMenus_FullMethodName:                 {Resource: "application.menu", Action: "publish"},
+			applicationv1.ApplicationService_GetPublishedNavigation_FullMethodName:       {Resource: "application.navigation", Action: "read"},
+			applicationv1.ApplicationService_GrantTenantApplication_FullMethodName:       {Resource: "application.grant", Action: "grant"},
+			applicationv1.ApplicationService_RevokeTenantApplication_FullMethodName:      {Resource: "application.grant", Action: "revoke"},
+			applicationv1.ApplicationService_ListTenantApplications_FullMethodName:       {Resource: "application.grant", Action: "list"},
+			applicationv1.ApplicationService_BatchCheckTenantApplications_FullMethodName: {Resource: "application.grant", Action: "check"},
+		}
+		requirement, ok := requirements[method]
+		return requirement, ok
+	}
 }
 
 func errorMappingInterceptor(ctx context.Context, request any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {

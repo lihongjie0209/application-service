@@ -8,6 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lihongjie0209/application-service/internal/application"
+	"github.com/lihongjie0209/application-service/internal/authorization"
 	"github.com/lihongjie0209/application-service/internal/cache"
 	"github.com/lihongjie0209/application-service/internal/config"
 	"github.com/lihongjie0209/application-service/internal/database"
@@ -38,6 +39,7 @@ func New(cfg config.Config) *fx.App {
 		fx.Provide(idempotency.New),
 		fx.Provide(observability.NewMetrics),
 		outbound.Module,
+		fx.Provide(authorization.New),
 		application.Module,
 		scheduler.Module,
 		grpctransport.Module,
