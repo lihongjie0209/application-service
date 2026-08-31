@@ -27,3 +27,18 @@ func TestApplicationMetadataRejectsDoubleEncodedJSON(t *testing.T) {
 		t.Fatal("json.Unmarshal() error = nil")
 	}
 }
+
+func TestGrantEntitlementsAcceptJSONObject(t *testing.T) {
+	t.Parallel()
+	var request GrantRequest
+	if err := json.Unmarshal([]byte(`{"tenant_id":"tenant-1","application_id":"app-1","entitlements_json":{"plan":"pro"}}`), &request); err != nil {
+		t.Fatal(err)
+	}
+	encoded, err := encodeJSONObject(request.EntitlementsJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if encoded != `{"plan":"pro"}` {
+		t.Fatalf("entitlements = %s", encoded)
+	}
+}

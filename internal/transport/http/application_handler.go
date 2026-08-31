@@ -71,7 +71,7 @@ type GrantRequest struct {
 	ValidFrom        time.Time  `json:"valid_from"`
 	ValidUntil       *time.Time `json:"valid_until"`
 	Source           string     `json:"source"`
-	EntitlementsJSON string     `json:"entitlements_json" swaggertype:"object"`
+	EntitlementsJSON JSONObject `json:"entitlements_json" swaggertype:"object"`
 	ExpectedVersion  int64      `json:"expected_version"`
 }
 type RevokeGrantRequest struct {
@@ -294,7 +294,12 @@ func (h *Handler) Grant(c *gin.Context) {
 	if !bind(c, h.logger, &r) {
 		return
 	}
-	v, err := h.applications.Grant(c.Request.Context(), r.TenantID, r.ApplicationID, r.ValidFrom, r.ValidUntil, r.Source, r.EntitlementsJSON, r.ExpectedVersion)
+	entitlements, err := encodeJSONObject(r.EntitlementsJSON)
+	if err != nil {
+		Fail(c, h.logger, apperror.Invalid("entitlements_json must be a JSON object", err))
+		return
+	}
+	v, err := h.applications.Grant(c.Request.Context(), r.TenantID, r.ApplicationID, r.ValidFrom, r.ValidUntil, r.Source, entitlements, r.ExpectedVersion)
 	respond(c, h.logger, v, err)
 }
 
