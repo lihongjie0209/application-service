@@ -1,6 +1,7 @@
 package httptransport
 
 import (
+	"encoding/json"
 	"log/slog"
 	"time"
 
@@ -9,25 +10,27 @@ import (
 	"github.com/lihongjie0209/application-service/internal/application"
 )
 
+type JSONObject map[string]any
+
 type CreateApplicationRequest struct {
-	Code         string `json:"code" binding:"required"`
-	Name         string `json:"name" binding:"required"`
-	Description  string `json:"description"`
-	Icon         string `json:"icon"`
-	DefaultRoute string `json:"default_route"`
-	SortOrder    int32  `json:"sort_order"`
-	MetadataJSON string `json:"metadata_json" swaggertype:"object"`
+	Code         string     `json:"code" binding:"required"`
+	Name         string     `json:"name" binding:"required"`
+	Description  string     `json:"description"`
+	Icon         string     `json:"icon"`
+	DefaultRoute string     `json:"default_route"`
+	SortOrder    int32      `json:"sort_order"`
+	MetadataJSON JSONObject `json:"metadata_json" swaggertype:"object"`
 }
 type UpdateApplicationRequest struct {
-	ID           string `json:"id" binding:"required"`
-	Name         string `json:"name" binding:"required"`
-	Description  string `json:"description"`
-	Icon         string `json:"icon"`
-	DefaultRoute string `json:"default_route"`
-	SortOrder    int32  `json:"sort_order"`
-	Status       string `json:"status" binding:"required"`
-	MetadataJSON string `json:"metadata_json" swaggertype:"object"`
-	Version      int64  `json:"version" binding:"required"`
+	ID           string     `json:"id" binding:"required"`
+	Name         string     `json:"name" binding:"required"`
+	Description  string     `json:"description"`
+	Icon         string     `json:"icon"`
+	DefaultRoute string     `json:"default_route"`
+	SortOrder    int32      `json:"sort_order"`
+	Status       string     `json:"status" binding:"required"`
+	MetadataJSON JSONObject `json:"metadata_json" swaggertype:"object"`
+	Version      int64      `json:"version" binding:"required"`
 }
 type IDRequest struct {
 	ID string `json:"id" binding:"required"`
@@ -117,7 +120,12 @@ func (h *Handler) CreateApplication(c *gin.Context) {
 	if !bind(c, h.logger, &r) {
 		return
 	}
-	v, err := h.applications.CreateApplication(c.Request.Context(), application.ApplicationInput{Code: r.Code, Name: r.Name, Description: r.Description, Icon: r.Icon, DefaultRoute: r.DefaultRoute, SortOrder: r.SortOrder, MetadataJSON: r.MetadataJSON})
+	metadata, err := encodeJSONObject(r.MetadataJSON)
+	if err != nil {
+		Fail(c, h.logger, apperror.Invalid("metadata_json must be a JSON object", err))
+		return
+	}
+	v, err := h.applications.CreateApplication(c.Request.Context(), application.ApplicationInput{Code: r.Code, Name: r.Name, Description: r.Description, Icon: r.Icon, DefaultRoute: r.DefaultRoute, SortOrder: r.SortOrder, MetadataJSON: metadata})
 	respond(c, h.logger, v, err)
 }
 
@@ -136,7 +144,12 @@ func (h *Handler) UpdateApplication(c *gin.Context) {
 	if !bind(c, h.logger, &r) {
 		return
 	}
-	v, err := h.applications.UpdateApplication(c.Request.Context(), r.ID, application.ApplicationInput{Name: r.Name, Description: r.Description, Icon: r.Icon, DefaultRoute: r.DefaultRoute, SortOrder: r.SortOrder, Status: r.Status, MetadataJSON: r.MetadataJSON}, r.Version)
+	metadata, err := encodeJSONObject(r.MetadataJSON)
+	if err != nil {
+		Fail(c, h.logger, apperror.Invalid("metadata_json must be a JSON object", err))
+		return
+	}
+	v, err := h.applications.UpdateApplication(c.Request.Context(), r.ID, application.ApplicationInput{Name: r.Name, Description: r.Description, Icon: r.Icon, DefaultRoute: r.DefaultRoute, SortOrder: r.SortOrder, Status: r.Status, MetadataJSON: metadata}, r.Version)
 	respond(c, h.logger, v, err)
 }
 
@@ -360,4 +373,15 @@ func respond(c *gin.Context, logger *slog.Logger, body any, err error) {
 		return
 	}
 	OK(c, body)
+}
+
+func encodeJSONObject(value JSONObject) (string, error) {
+	if value == nil {
+		return "", nil
+	}
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
 }
