@@ -20,8 +20,8 @@ import (
 	apphealth "github.com/lihongjie0209/application-service/internal/health"
 	"github.com/lihongjie0209/application-service/internal/idempotency"
 	"github.com/lihongjie0209/application-service/internal/observability"
-	"github.com/lihongjie0209/application-service/internal/principal"
 	"github.com/lihongjie0209/application-service/internal/requestid"
+	"github.com/lihongjie0209/microservice-platform-go/principal"
 
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -185,7 +185,7 @@ func authenticateGRPC(ctx context.Context, method string, service *auth.Service,
 		if len(values) == 0 || !auth.VerifyPSK(values[0], cfg.PSK.Key) {
 			return nil, status.Error(codes.Unauthenticated, "missing or invalid PSK")
 		}
-		return principal.WithContext(ctx, principal.Principal{Subject: "psk", Method: principal.AuthenticationPSK}), nil
+		return principal.SystemContext(ctx, "psk"), nil
 	}
 	if auth.MatchesAny(method, cfg.SkipGRPCMethods) {
 		return ctx, nil

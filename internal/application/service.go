@@ -15,8 +15,8 @@ import (
 	"github.com/lihongjie0209/application-service/internal/apperror"
 	"github.com/lihongjie0209/application-service/internal/cache"
 	"github.com/lihongjie0209/application-service/internal/database"
-	"github.com/lihongjie0209/application-service/internal/principal"
 	platformevents "github.com/lihongjie0209/microservice-platform-go/eventbus"
+	"github.com/lihongjie0209/microservice-platform-go/principal"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 	searchv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/search/v1"
 	"go.uber.org/fx"
@@ -230,6 +230,19 @@ func (s *Service) PublishMenus(ctx context.Context, appID string, appVersion int
 	return release, menus, nil
 }
 func (s *Service) GetPublishedNavigation(ctx context.Context, appID string) (Application, MenuRelease, []Menu, error) {
+	tenantID, scoped, err := tenantScope(ctx)
+	if err != nil {
+		return Application{}, MenuRelease{}, nil, err
+	}
+	if scoped {
+		active, checkErr := s.repository.BatchActiveGrants(ctx, tenantID, []string{appID}, s.now())
+		if checkErr != nil {
+			return Application{}, MenuRelease{}, nil, translate(checkErr)
+		}
+		if !active[appID] {
+			return Application{}, MenuRelease{}, nil, apperror.Forbidden("application access denied")
+		}
+	}
 	app, err := s.repository.GetApplication(ctx, appID)
 	if err != nil {
 		return Application{}, MenuRelease{}, nil, translate(err)
@@ -248,6 +261,9 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 	tenantID, appID = strings.TrimSpace(tenantID), strings.TrimSpace(appID)
 	if tenantID == "" || appID == "" {
 		return Grant{}, apperror.Invalid("tenant_id and application_id are required", nil)
+	}
+	if err := authorizeTenant(ctx, tenantID); err != nil {
+		return Grant{}, err
 	}
 	application, err := s.repository.GetApplication(ctx, appID)
 	if err != nil {
@@ -298,6 +314,9 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected int64) (Grant, error) {
 	actor, err := actor(ctx)
 	if err != nil {
+		return Grant{}, err
+	}
+	if err := authorizeTenant(ctx, tenantID); err != nil {
 		return Grant{}, err
 	}
 	v, err := s.repository.GetGrant(ctx, tenantID, appID)
@@ -353,6 +372,9 @@ func searchProjectionVersion(applicationVersion, grantVersion int64) int64 {
 	return applicationVersion<<32 | grantVersion&0xffffffff
 }
 func (s *Service) ListTenantApplications(ctx context.Context, tenantID string, active bool, page, pageSize int) (Page[Grant], []Application, error) {
+	if err := authorizeTenant(ctx, tenantID); err != nil {
+		return Page[Grant]{}, nil, err
+	}
 	page, pageSize, err := pagination(page, pageSize)
 	if err != nil {
 		return Page[Grant]{}, nil, err
@@ -361,6 +383,9 @@ func (s *Service) ListTenantApplications(ctx context.Context, tenantID string, a
 	return Page[Grant]{Items: grants, Total: total, Page: page, PageSize: pageSize}, apps, translate(err)
 }
 func (s *Service) BatchCheck(ctx context.Context, tenantID string, ids []string, at time.Time) (map[string]bool, error) {
+	if err := authorizeTenant(ctx, tenantID); err != nil {
+		return nil, err
+	}
 	if at.IsZero() {
 		at = s.now()
 	}
@@ -471,10 +496,43 @@ func defaultJSON(v string) string {
 }
 func actor(ctx context.Context) (string, error) {
 	v, ok := principal.FromContext(ctx)
-	if !ok || v.Subject == "" {
+	if !ok || v.ID == "" {
 		return "", apperror.Unauthorized("authenticated actor is required")
 	}
-	return v.Subject, nil
+	return v.ID, nil
+}
+
+func authorizeTenant(ctx context.Context, tenantID string) error {
+	trustedTenant, scoped, err := tenantScope(ctx)
+	if err != nil {
+		return err
+	}
+	if !scoped {
+		return nil
+	}
+	requested := strings.TrimSpace(tenantID)
+	if requested == "" || trustedTenant != requested {
+		return apperror.Forbidden("tenant access denied")
+	}
+	return nil
+}
+
+func tenantScope(ctx context.Context) (string, bool, error) {
+	identity, ok := principal.FromContext(ctx)
+	if !ok {
+		return "", false, apperror.Unauthorized("authenticated actor is required")
+	}
+	switch identity.Type {
+	case principal.TypeServiceAccount, principal.TypeSystem:
+		return "", false, nil
+	case principal.TypeUser:
+		if identity.TenantID == "" {
+			return "", false, apperror.Forbidden("tenant access denied")
+		}
+		return identity.TenantID, true, nil
+	default:
+		return "", false, apperror.Forbidden("tenant access denied")
+	}
 }
 func pagination(page, size int) (int, int, error) {
 	if page <= 0 {

@@ -1,9 +1,93 @@
 package application
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
+
+	"github.com/lihongjie0209/application-service/internal/apperror"
+	"github.com/lihongjie0209/microservice-platform-go/principal"
 )
+
+type navigationRepository struct {
+	Repository
+	active map[string]bool
+}
+
+func (r navigationRepository) BatchActiveGrants(context.Context, string, []string, time.Time) (map[string]bool, error) {
+	return r.active, nil
+}
+
+func (navigationRepository) GetApplication(context.Context, string) (Application, error) {
+	return Application{ID: "app-1", PublishedRelease: 1}, nil
+}
+
+func (navigationRepository) GetRelease(context.Context, string, int64) (MenuRelease, []Menu, error) {
+	return MenuRelease{ID: "release-1"}, []Menu{{ID: "menu-1"}}, nil
+}
+
+func TestGetPublishedNavigationRequiresActiveTenantGrant(t *testing.T) {
+	t.Parallel()
+	ctx := principal.WithContext(t.Context(), principal.Principal{ID: "user-1", Type: principal.TypeUser, TenantID: "tenant-1"})
+
+	denied := &Service{repository: navigationRepository{active: map[string]bool{}}, now: time.Now}
+	if _, _, _, err := denied.GetPublishedNavigation(ctx, "app-1"); appErrorCode(err) != apperror.CodeForbidden {
+		t.Fatalf("GetPublishedNavigation() error = %#v, want forbidden", err)
+	}
+
+	allowed := &Service{repository: navigationRepository{active: map[string]bool{"app-1": true}}, now: time.Now}
+	app, release, menus, err := allowed.GetPublishedNavigation(ctx, "app-1")
+	if err != nil || app.ID != "app-1" || release.ID != "release-1" || len(menus) != 1 {
+		t.Fatalf("GetPublishedNavigation() = (%+v, %+v, %+v, %v)", app, release, menus, err)
+	}
+}
+
+func appErrorCode(err error) int {
+	var appErr *apperror.Error
+	if errors.As(err, &appErr) {
+		return appErr.Code
+	}
+	return 0
+}
+
+func TestAuthorizeTenant(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		identity *principal.Principal
+		tenantID string
+		wantCode int
+	}{
+		{name: "matching user tenant", identity: &principal.Principal{ID: "user-1", Type: principal.TypeUser, TenantID: "tenant-1"}, tenantID: "tenant-1"},
+		{name: "different user tenant", identity: &principal.Principal{ID: "user-1", Type: principal.TypeUser, TenantID: "tenant-1"}, tenantID: "tenant-2", wantCode: apperror.CodeForbidden},
+		{name: "user without active tenant", identity: &principal.Principal{ID: "user-1", Type: principal.TypeUser}, tenantID: "tenant-1", wantCode: apperror.CodeForbidden},
+		{name: "service account cross tenant", identity: &principal.Principal{ID: "service-1", Type: principal.TypeServiceAccount}, tenantID: "tenant-2"},
+		{name: "system cross tenant", identity: &principal.Principal{ID: "system", Type: principal.TypeSystem}, tenantID: "tenant-2"},
+		{name: "unknown principal type", identity: &principal.Principal{ID: "unknown"}, tenantID: "tenant-1", wantCode: apperror.CodeForbidden},
+		{name: "missing principal", tenantID: "tenant-1", wantCode: apperror.CodeUnauthorized},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			ctx := t.Context()
+			if test.identity != nil {
+				ctx = principal.WithContext(ctx, *test.identity)
+			}
+			err := authorizeTenant(ctx, test.tenantID)
+			if test.wantCode == 0 {
+				if err != nil {
+					t.Fatalf("authorizeTenant() error = %v", err)
+				}
+				return
+			}
+			if appErrorCode(err) != test.wantCode {
+				t.Fatalf("authorizeTenant() error = %#v, want code %d", err, test.wantCode)
+			}
+		})
+	}
+}
 
 func TestValidateMenuTree(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
