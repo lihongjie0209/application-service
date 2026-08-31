@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	hellov1 "github.com/lihongjie0209/application-service/gen/hello/v1"
 	"github.com/lihongjie0209/application-service/internal/app"
 	"github.com/lihongjie0209/application-service/internal/auth"
 	"github.com/lihongjie0209/application-service/internal/config"
+	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -71,7 +71,7 @@ func TestHTTPAndGRPCEndToEnd(t *testing.T) {
 		Health:        config.Health{DatabaseTimeout: 2 * time.Second, RedisTimeout: 2 * time.Second},
 		Observability: config.Observability{MetricsEnabled: true},
 		JWT:           config.JWT{Issuer: "integration", Secret: secret, TTL: time.Hour},
-		Auth:          config.Auth{ClientID: "client", ClientSecret: "secret", SkipHTTPPaths: []string{"/api/v1/version"}, SkipGRPCMethods: []string{"/grpc.health.v1.Health/*"}, PSK: config.PSK{Enabled: true, Key: secret, GRPCMethods: []string{"/hello.v1.HelloService/*"}}},
+		Auth:          config.Auth{ClientID: "client", ClientSecret: "secret", SkipHTTPPaths: []string{"/api/v1/version"}, SkipGRPCMethods: []string{"/grpc.health.v1.Health/*"}, PSK: config.PSK{Enabled: true, Key: secret, GRPCMethods: []string{"/platform.application.v1.ApplicationService/*"}}},
 		Cron:          config.Cron{Enabled: false, Timezone: "UTC"},
 		User:          config.User{CacheTTL: time.Minute, LockTTL: 10 * time.Second, LockRetryDelay: 20 * time.Millisecond},
 		Idempotency:   config.Idempotency{Enabled: true, ProcessingTTL: 30 * time.Second, ResultTTL: time.Hour, FailureTTL: time.Minute},
@@ -108,8 +108,8 @@ func TestHTTPAndGRPCEndToEnd(t *testing.T) {
 		t.Fatalf("health = %v, %v", healthResponse, err)
 	}
 	pskCtx := metadata.AppendToOutgoingContext(ctx, "authorization", "PSK "+secret)
-	if _, err := hellov1.NewHelloServiceClient(connection).Ping(pskCtx, &hellov1.PingRequest{Message: "hello"}); err != nil {
-		t.Fatalf("PSK Ping: %v", err)
+	if _, err := applicationv1.NewApplicationServiceClient(connection).ListApplications(pskCtx, &applicationv1.ListApplicationsRequest{}); err != nil {
+		t.Fatalf("PSK ListApplications: %v", err)
 	}
 }
 
