@@ -536,6 +536,9 @@ func actor(ctx context.Context) (string, error) {
 }
 
 func authorizeTenant(ctx context.Context, tenantID string) error {
+	if platformAdministration(ctx) {
+		return nil
+	}
 	trustedTenant, scoped, err := tenantScope(ctx)
 	if err != nil {
 		return err
@@ -548,6 +551,21 @@ func authorizeTenant(ctx context.Context, tenantID string) error {
 		return apperror.Forbidden("tenant access denied")
 	}
 	return nil
+}
+
+type platformAdministrationKey struct{}
+
+// WithPlatformAdministration records that the transport already authorized the
+// caller in the reserved platform namespace. The marker is process-local and
+// lets platform administrators manage a target tenant without pretending that
+// their JWT membership belongs to that tenant.
+func WithPlatformAdministration(ctx context.Context) context.Context {
+	return context.WithValue(ctx, platformAdministrationKey{}, true)
+}
+
+func platformAdministration(ctx context.Context) bool {
+	value, _ := ctx.Value(platformAdministrationKey{}).(bool)
+	return value
 }
 
 func tenantScope(ctx context.Context) (string, bool, error) {

@@ -147,7 +147,10 @@ Redsync does not start a hidden renewal goroutine. Long-running jobs must call `
 - `POST /api/v1/applications/create|update|get|list`: application catalog
 - `POST /api/v1/applications/menus/upsert|delete|draft/list|publish`: menu draft and release lifecycle
 - `POST /api/v1/applications/navigation/get`: published navigation snapshot
-- `POST /api/v1/applications/tenant-grants/grant|revoke|list|batch-check`: tenant application grants
+- `POST /api/v1/applications/tenant-grants/list|batch-check`: tenant-scoped application discovery and grant checks for the current membership; service callers retain their service identity
+- `POST /api/v1/applications/tenant-grants/grant|revoke|manage/list`: platform-authorized tenant application administration; the server records the successful platform decision before allowing a target tenant different from the JWT-selected tenant
+
+Application catalog and menu draft/publication operations are platform-scoped. A tenant administrator's tenant-local wildcard does not authorize global catalog mutation. The bootstrap manifest marks these pages with `permission_scope: platform`, matching the backend enforcement boundary.
 - `GET /swagger/index.html`: generated Swagger UI when enabled
 
 Every request accepts or generates `X-Request-ID`; it is returned in the response header and JSON envelope and correlated with OpenTelemetry trace/span IDs in logs. Request deadlines are propagated through `Request.Context`, so context-aware SQL and Redis calls stop after client cancellation or timeout.

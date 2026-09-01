@@ -678,6 +678,34 @@ paths:
       summary: List applications granted to a tenant
       tags:
       - tenant-applications
+  /api/v1/applications/tenant-grants/manage/list:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Target tenant and pagination
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/httptransport.ListTenantApplicationsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httptransport.Response'
+            - properties:
+                body:
+                  $ref: '#/definitions/httptransport.TenantApplicationsResponse'
+              type: object
+      security:
+      - Bearer: []
+      summary: List tenant application grants as a platform administrator
+      tags:
+      - tenant-applications
   /api/v1/applications/tenant-grants/revoke:
     post:
       consumes:

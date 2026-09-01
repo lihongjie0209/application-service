@@ -90,6 +90,18 @@ func TestAuthorizeTenant(t *testing.T) {
 	}
 }
 
+func TestAuthorizeTenantAllowsExplicitPlatformAdministration(t *testing.T) {
+	t.Parallel()
+	ctx := principal.WithContext(t.Context(), principal.Principal{
+		ID:       "platform-admin",
+		Type:     principal.TypeUser,
+		TenantID: "selected-tenant",
+	})
+	if err := authorizeTenant(WithPlatformAdministration(ctx), "target-tenant"); err != nil {
+		t.Fatalf("authorizeTenant() error = %v", err)
+	}
+}
+
 func TestValidateMenuTree(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
 		if err := validateMenuTree([]Menu{{ID: "root"}, {ID: "child", ParentID: "root"}}); err != nil {

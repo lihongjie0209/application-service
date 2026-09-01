@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lihongjie0209/application-service/internal/apperror"
+	applicationdomain "github.com/lihongjie0209/application-service/internal/application"
 	"github.com/lihongjie0209/application-service/internal/auth"
 	"github.com/lihongjie0209/application-service/internal/config"
 	"github.com/lihongjie0209/application-service/internal/environment"
@@ -242,25 +243,29 @@ func Authorization(enabled bool, authorizer platformauthz.Authorizer, logger *sl
 			Fail(c, logger, apperror.Forbidden("permission denied"))
 			return
 		}
+		if requirement.Scope == platformauthz.ScopePlatform {
+			c.Request = c.Request.WithContext(applicationdomain.WithPlatformAdministration(c.Request.Context()))
+		}
 		c.Next()
 	}
 }
 
 func applicationHTTPRequirement(route string) (platformauthz.Requirement, bool) {
 	requirements := map[string]platformauthz.Requirement{
-		"/api/v1/applications/create":                    {Resource: "application.catalog", Action: "create"},
-		"/api/v1/applications/update":                    {Resource: "application.catalog", Action: "update"},
-		"/api/v1/applications/get":                       {Resource: "application.catalog", Action: "read"},
-		"/api/v1/applications/list":                      {Resource: "application.catalog", Action: "list"},
-		"/api/v1/applications/menus/upsert":              {Resource: "application.menu", Action: "update"},
-		"/api/v1/applications/menus/delete":              {Resource: "application.menu", Action: "delete"},
-		"/api/v1/applications/menus/draft/list":          {Resource: "application.menu", Action: "list"},
-		"/api/v1/applications/menus/publish":             {Resource: "application.menu", Action: "publish"},
-		"/api/v1/applications/navigation/get":            {Resource: "application.navigation", Action: "read"},
-		"/api/v1/applications/tenant-grants/grant":       {Resource: "application.grant", Action: "grant"},
-		"/api/v1/applications/tenant-grants/revoke":      {Resource: "application.grant", Action: "revoke"},
-		"/api/v1/applications/tenant-grants/list":        {Resource: "application.grant", Action: "list"},
-		"/api/v1/applications/tenant-grants/batch-check": {Resource: "application.grant", Action: "check"},
+		"/api/v1/applications/create":                    {Resource: "application.catalog", Action: "create", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/update":                    {Resource: "application.catalog", Action: "update", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/get":                       {Resource: "application.catalog", Action: "read", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/list":                      {Resource: "application.catalog", Action: "list", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/menus/upsert":              {Resource: "application.menu", Action: "update", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/menus/delete":              {Resource: "application.menu", Action: "delete", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/menus/draft/list":          {Resource: "application.menu", Action: "list", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/menus/publish":             {Resource: "application.menu", Action: "publish", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/navigation/get":            {Resource: "application.navigation", Action: "read", Scope: platformauthz.ScopePrincipal},
+		"/api/v1/applications/tenant-grants/grant":       {Resource: "application.grant", Action: "grant", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/tenant-grants/revoke":      {Resource: "application.grant", Action: "revoke", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/tenant-grants/manage/list": {Resource: "application.grant", Action: "list", Scope: platformauthz.ScopePlatform},
+		"/api/v1/applications/tenant-grants/list":        {Resource: "application.grant", Action: "list", Scope: platformauthz.ScopePrincipal},
+		"/api/v1/applications/tenant-grants/batch-check": {Resource: "application.grant", Action: "check", Scope: platformauthz.ScopePrincipal},
 	}
 	requirement, ok := requirements[route]
 	return requirement, ok

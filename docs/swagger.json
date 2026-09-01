@@ -520,6 +520,56 @@
                 }
             }
         },
+        "/api/v1/applications/tenant-grants/manage/list": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tenant-applications"
+                ],
+                "summary": "List tenant application grants as a platform administrator",
+                "parameters": [
+                    {
+                        "description": "Target tenant and pagination",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httptransport.ListTenantApplicationsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httptransport.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "body": {
+                                            "$ref": "#/definitions/httptransport.TenantApplicationsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/applications/tenant-grants/revoke": {
             "post": {
                 "security": [

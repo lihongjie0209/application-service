@@ -331,6 +331,23 @@ func (h *Handler) Revoke(c *gin.Context) {
 // @Success 200 {object} Response{body=TenantApplicationsResponse}
 // @Router /api/v1/applications/tenant-grants/list [post]
 func (h *Handler) ListTenantApplications(c *gin.Context) {
+	h.listTenantApplications(c)
+}
+
+// ListManagedTenantApplications godoc
+// @Summary List tenant application grants as a platform administrator
+// @Tags tenant-applications
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body ListTenantApplicationsRequest true "Target tenant and pagination"
+// @Success 200 {object} Response{body=TenantApplicationsResponse}
+// @Router /api/v1/applications/tenant-grants/manage/list [post]
+func (h *Handler) ListManagedTenantApplications(c *gin.Context) {
+	h.listTenantApplications(c)
+}
+
+func (h *Handler) listTenantApplications(c *gin.Context) {
 	var r ListTenantApplicationsRequest
 	if !bind(c, h.logger, &r) {
 		return

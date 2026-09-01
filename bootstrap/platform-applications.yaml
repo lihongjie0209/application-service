@@ -7,9 +7,9 @@ applications:
     sort_order: 10
     metadata: {owner: platform}
     menus:
-      - {code: applications, name: 应用管理, route: applications, component: platform-admin.applications, permission_code: application.catalog.list, permission_scope: tenant, sort_order: 10}
-      - {code: menus, name: 菜单管理, route: menus, component: platform-admin.menus, permission_code: application.menu.list, permission_scope: tenant, sort_order: 20}
-      - {code: application-grants, name: 应用授权, route: application-grants, component: platform-admin.application-grants, permission_code: application.grant.list, permission_scope: tenant, sort_order: 30}
+      - {code: applications, name: 应用管理, route: applications, component: platform-admin.applications, permission_code: application.catalog.list, permission_scope: platform, sort_order: 10}
+      - {code: menus, name: 菜单管理, route: menus, component: platform-admin.menus, permission_code: application.menu.list, permission_scope: platform, sort_order: 20}
+      - {code: application-grants, name: 应用授权, route: application-grants, component: platform-admin.application-grants, permission_code: application.grant.list, permission_scope: platform, sort_order: 30}
       - {code: tenants, name: 租户管理, route: tenants, component: platform-admin.tenants, permission_code: tenant.profile.list, permission_scope: tenant, sort_order: 40}
       - {code: organization-units, name: 组织架构, route: organization-units, component: platform-admin.organization-units, permission_code: tenant.organization-unit.list, permission_scope: tenant, sort_order: 50}
       - {code: memberships, name: 成员管理, route: memberships, component: platform-admin.memberships, permission_code: tenant.membership.list, permission_scope: tenant, sort_order: 60}

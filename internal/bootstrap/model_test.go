@@ -15,6 +15,11 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 		t.Fatalf("applications = %d, want 17", len(manifest.Applications))
 	}
 	components := map[string]struct{}{}
+	platformManagementPages := map[string]bool{
+		"platform-admin.applications":       true,
+		"platform-admin.menus":              true,
+		"platform-admin.application-grants": true,
+	}
 	for _, application := range manifest.Applications {
 		for _, menu := range application.Menus {
 			if menu.Component == "" {
@@ -26,6 +31,9 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 			components[menu.Component] = struct{}{}
 			if menu.PermissionCode == "" || (menu.PermissionScope != "tenant" && menu.PermissionScope != "platform") {
 				t.Fatalf("component %q has incomplete permission reference %q/%q", menu.Component, menu.PermissionScope, menu.PermissionCode)
+			}
+			if platformManagementPages[menu.Component] && menu.PermissionScope != "platform" {
+				t.Fatalf("global management component %q has scope %q, want platform", menu.Component, menu.PermissionScope)
 			}
 		}
 	}

@@ -29,7 +29,7 @@ func TestApplicationHTTPRequirementCoversEveryBusinessRoute(t *testing.T) {
 		"/api/v1/applications/create", "/api/v1/applications/update", "/api/v1/applications/get", "/api/v1/applications/list",
 		"/api/v1/applications/menus/upsert", "/api/v1/applications/menus/delete", "/api/v1/applications/menus/draft/list", "/api/v1/applications/menus/publish",
 		"/api/v1/applications/navigation/get", "/api/v1/applications/tenant-grants/grant", "/api/v1/applications/tenant-grants/revoke",
-		"/api/v1/applications/tenant-grants/list", "/api/v1/applications/tenant-grants/batch-check",
+		"/api/v1/applications/tenant-grants/list", "/api/v1/applications/tenant-grants/manage/list", "/api/v1/applications/tenant-grants/batch-check",
 	} {
 		if requirement, ok := applicationHTTPRequirement(route); !ok || requirement.Resource == "" || requirement.Action == "" {
 			t.Fatalf("route %q requirement = %+v, %v", route, requirement, ok)
@@ -37,6 +37,30 @@ func TestApplicationHTTPRequirementCoversEveryBusinessRoute(t *testing.T) {
 	}
 	if _, ok := applicationHTTPRequirement("/api/v1/version"); ok {
 		t.Fatal("version endpoint must not require a domain permission")
+	}
+}
+
+func TestApplicationHTTPRequirementSeparatesPlatformManagementFromTenantConsumption(t *testing.T) {
+	t.Parallel()
+	for _, route := range []string{
+		"/api/v1/applications/create",
+		"/api/v1/applications/menus/publish",
+		"/api/v1/applications/tenant-grants/grant",
+		"/api/v1/applications/tenant-grants/manage/list",
+	} {
+		requirement, ok := applicationHTTPRequirement(route)
+		if !ok || requirement.Scope != platformauthz.ScopePlatform {
+			t.Fatalf("route %q scope = %v, want platform", route, requirement.Scope)
+		}
+	}
+	for _, route := range []string{
+		"/api/v1/applications/navigation/get",
+		"/api/v1/applications/tenant-grants/list",
+	} {
+		requirement, ok := applicationHTTPRequirement(route)
+		if !ok || requirement.Scope != platformauthz.ScopePrincipal {
+			t.Fatalf("route %q scope = %v, want principal-derived", route, requirement.Scope)
+		}
 	}
 }
 
