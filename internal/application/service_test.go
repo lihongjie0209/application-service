@@ -8,6 +8,7 @@ import (
 
 	"github.com/lihongjie0209/application-service/internal/apperror"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
+	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 )
 
 type navigationRepository struct {
@@ -129,6 +130,31 @@ func TestSearchDocumentUsesTenantVisibilityAndCompositeVersion(t *testing.T) {
 	}
 	if searchProjectionVersion(7, 12) <= searchProjectionVersion(7, 11) {
 		t.Fatal("a grant update must increase the projection version")
+	}
+}
+
+func TestNewEventEnvelopeCarriesApplicationScope(t *testing.T) {
+	t.Parallel()
+	at := time.Date(2026, time.September, 1, 18, 0, 0, 0, time.FixedZone("CST", 8*60*60))
+
+	envelope, err := newEventEnvelope(
+		"platform.application.v1.TenantApplicationGrantChanged",
+		"grant-1",
+		"tenant_application_grant",
+		"tenant-1",
+		"app-1",
+		"actor-1",
+		at,
+		&applicationv1.TenantApplicationGrantChangedEvent{},
+	)
+	if err != nil {
+		t.Fatalf("newEventEnvelope() error = %v", err)
+	}
+	if envelope.GetTenantId() != "tenant-1" || envelope.GetApplicationId() != "app-1" {
+		t.Fatalf("event scope = tenant %q application %q", envelope.GetTenantId(), envelope.GetApplicationId())
+	}
+	if envelope.GetAggregateId() != "grant-1" || envelope.GetContext().GetActorId() != "actor-1" {
+		t.Fatalf("event metadata = aggregate %q actor %q", envelope.GetAggregateId(), envelope.GetContext().GetActorId())
 	}
 }
 

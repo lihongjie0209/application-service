@@ -18,6 +18,7 @@ import (
 	platformevents "github.com/lihongjie0209/microservice-platform-go/eventbus"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
+	commonv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/common/v1"
 	searchv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/search/v1"
 	"go.uber.org/fx"
 	"google.golang.org/protobuf/proto"
@@ -57,7 +58,7 @@ func (s *Service) CreateApplication(ctx context.Context, in ApplicationInput) (A
 		if err := s.repository.CreateApplication(ctx, tx, v); err != nil {
 			return err
 		}
-		return s.addEvent(ctx, tx, "platform.application.catalog.changed.v1", "platform.application.v1.ApplicationChanged", v.ID, "application", "", actor, now, &applicationv1.ApplicationChangedEvent{Application: toProtoApplication(v), ChangeType: "created"})
+		return s.addEvent(ctx, tx, "platform.application.catalog.changed.v1", "platform.application.v1.ApplicationChanged", v.ID, "application", "", v.ID, actor, now, &applicationv1.ApplicationChangedEvent{Application: toProtoApplication(v), ChangeType: "created"})
 	})
 	return v, translate(err)
 }
@@ -84,7 +85,7 @@ func (s *Service) UpdateApplication(ctx context.Context, id string, in Applicati
 			return err
 		}
 		v.Version = expected + 1
-		if err := s.addEvent(ctx, tx, "platform.application.catalog.changed.v1", "platform.application.v1.ApplicationChanged", v.ID, "application", "", actor, v.UpdatedAt, &applicationv1.ApplicationChangedEvent{Application: toProtoApplication(v), ChangeType: "updated"}); err != nil {
+		if err := s.addEvent(ctx, tx, "platform.application.catalog.changed.v1", "platform.application.v1.ApplicationChanged", v.ID, "application", "", v.ID, actor, v.UpdatedAt, &applicationv1.ApplicationChangedEvent{Application: toProtoApplication(v), ChangeType: "updated"}); err != nil {
 			return err
 		}
 		grants, err := s.repository.ListActiveGrantsByApplication(ctx, tx, v.ID, v.UpdatedAt)
@@ -219,7 +220,7 @@ func (s *Service) PublishMenus(ctx context.Context, appID string, appVersion int
 				codes = append(codes, m.PermissionCode)
 			}
 		}
-		return s.addEvent(ctx, tx, "platform.application.menu.published.v1", "platform.application.v1.MenuPublished", release.ID, "menu_release", "", actor, now, &applicationv1.MenuPublishedEvent{Release: toProtoRelease(release), PermissionCodes: codes})
+		return s.addEvent(ctx, tx, "platform.application.menu.published.v1", "platform.application.v1.MenuPublished", release.ID, "menu_release", "", release.ApplicationID, actor, now, &applicationv1.MenuPublishedEvent{Release: toProtoRelease(release), PermissionCodes: codes})
 	})
 	if err != nil {
 		return MenuRelease{}, nil, translate(err)
@@ -304,7 +305,7 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 			}
 			current.Version = expected + 1
 		}
-		if err := s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", current.ID, "tenant_application_grant", tenantID, actor, now, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(current), ChangeType: "granted"}); err != nil {
+		if err := s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", current.ID, "tenant_application_grant", tenantID, current.ApplicationID, actor, now, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(current), ChangeType: "granted"}); err != nil {
 			return err
 		}
 		return s.addSearchProjectionEvent(ctx, tx, application, current, actor, now)
@@ -333,17 +334,17 @@ func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected i
 			return err
 		}
 		v.Version = expected + 1
-		if err := s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", v.ID, "tenant_application_grant", tenantID, actor, v.UpdatedAt, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(v), ChangeType: "revoked"}); err != nil {
+		if err := s.addEvent(ctx, tx, "platform.application.tenant-grant.changed.v1", "platform.application.v1.TenantApplicationGrantChanged", v.ID, "tenant_application_grant", tenantID, v.ApplicationID, actor, v.UpdatedAt, &applicationv1.TenantApplicationGrantChangedEvent{Grant: toProtoGrant(v), ChangeType: "revoked"}); err != nil {
 			return err
 		}
 		key := &searchv1.DocumentKey{TenantId: tenantID, SourceService: "application-service", DocumentType: "application", SourceId: application.ID, SourceVersion: searchProjectionVersion(application.Version, v.Version)}
-		return s.addEvent(ctx, tx, "platform.search.document.deleted.v1", "platform.search.document.deleted.v1", application.ID, "search_document", tenantID, actor, v.UpdatedAt, &searchv1.SearchDocumentDeletedEvent{Document: key})
+		return s.addEvent(ctx, tx, "platform.search.document.deleted.v1", "platform.search.document.deleted.v1", application.ID, "search_document", tenantID, application.ID, actor, v.UpdatedAt, &searchv1.SearchDocumentDeletedEvent{Document: key})
 	})
 	return v, translate(err)
 }
 func (s *Service) addSearchProjectionEvent(ctx context.Context, tx *sqlx.Tx, application Application, grant Grant, actor string, at time.Time) error {
 	document := searchDocument(application, grant)
-	return s.addEvent(ctx, tx, "platform.search.document.upserted.v1", "platform.search.document.upserted.v1", application.ID, "search_document", grant.TenantID, actor, at, &searchv1.SearchDocumentUpsertedEvent{Document: document})
+	return s.addEvent(ctx, tx, "platform.search.document.upserted.v1", "platform.search.document.upserted.v1", application.ID, "search_document", grant.TenantID, application.ID, actor, at, &searchv1.SearchDocumentUpsertedEvent{Document: document})
 }
 
 func searchDocument(application Application, grant Grant) *searchv1.SearchDocument {
@@ -460,8 +461,8 @@ func validateMenuTree(items []Menu) error {
 	}
 	return nil
 }
-func (s *Service) addEvent(ctx context.Context, tx *sqlx.Tx, subject, eventType, aggregateID, aggregateType, tenantID, actor string, at time.Time, payload proto.Message) error {
-	envelope, err := platformevents.NewEnvelope(platformevents.Metadata{EventID: uuid.NewString(), EventType: eventType, AggregateID: aggregateID, AggregateType: aggregateType, TenantID: tenantID, SchemaVersion: 1, ActorID: actor, OccurredAt: at}, payload)
+func (s *Service) addEvent(ctx context.Context, tx *sqlx.Tx, subject, eventType, aggregateID, aggregateType, tenantID, applicationID, actor string, at time.Time, payload proto.Message) error {
+	envelope, err := newEventEnvelope(eventType, aggregateID, aggregateType, tenantID, applicationID, actor, at, payload)
 	if err != nil {
 		return err
 	}
@@ -470,6 +471,20 @@ func (s *Service) addEvent(ctx context.Context, tx *sqlx.Tx, subject, eventType,
 		return err
 	}
 	return s.repository.AddOutbox(ctx, tx, OutboxEvent{ID: envelope.GetEventId(), Subject: subject, Envelope: encoded, AvailableAt: at, CreatedAt: at, UpdatedAt: at, CreatedBy: actor, UpdatedBy: actor})
+}
+
+func newEventEnvelope(eventType, aggregateID, aggregateType, tenantID, applicationID, actor string, at time.Time, payload proto.Message) (*commonv1.EventEnvelope, error) {
+	return platformevents.NewEnvelope(platformevents.Metadata{
+		EventID:       uuid.NewString(),
+		EventType:     eventType,
+		AggregateID:   aggregateID,
+		AggregateType: aggregateType,
+		TenantID:      tenantID,
+		ApplicationID: applicationID,
+		SchemaVersion: 1,
+		ActorID:       actor,
+		OccurredAt:    at,
+	}, payload)
 }
 func validateApplication(in ApplicationInput, create bool) (ApplicationInput, error) {
 	in.Code = strings.ToLower(strings.TrimSpace(in.Code))
