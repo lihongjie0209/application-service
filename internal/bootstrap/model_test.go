@@ -41,7 +41,7 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 			}
 		}
 	}
-	if len(components) != 41 {
-		t.Fatalf("page components = %d, want 41", len(components))
+	if len(components) != 42 {
+		t.Fatalf("page components = %d, want 42", len(components))
 	}
 }

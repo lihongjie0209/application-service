@@ -139,6 +139,7 @@ applications:
       - {code: plans, name: 套餐管理, route: plans, component: billing-center.plans, permission_code: billing.plan.list, permission_scope: platform, sort_order: 10}
       - {code: subscriptions, name: 订阅管理, route: subscriptions, component: billing-center.subscriptions, permission_code: billing.subscription.list, permission_scope: tenant, sort_order: 20}
       - {code: invoices, name: 账单管理, route: invoices, component: billing-center.invoices, permission_code: billing.invoice.list, permission_scope: tenant, sort_order: 30}
+      - {code: payments, name: 支付与退款, route: payments, component: billing-center.payments, permission_code: billing.payment.list, permission_scope: tenant, sort_order: 40}
 
   - code: rule-center
     name: 规则中心
