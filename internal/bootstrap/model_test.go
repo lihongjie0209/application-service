@@ -19,6 +19,7 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 		"platform-admin.applications":       true,
 		"platform-admin.menus":              true,
 		"platform-admin.application-grants": true,
+		"platform-admin.tenants":            true,
 	}
 	for _, application := range manifest.Applications {
 		for _, menu := range application.Menus {
