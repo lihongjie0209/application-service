@@ -1,0 +1,5 @@
+ALTER TABLE application_menu_release_items DROP CHECK application_menu_release_items_permission_scope_check;
+ALTER TABLE application_menu_drafts DROP CHECK application_menu_drafts_permission_scope_check;
+
+ALTER TABLE application_menu_release_items DROP COLUMN permission_scope;
+ALTER TABLE application_menu_drafts DROP COLUMN permission_scope;

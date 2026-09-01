@@ -7,23 +7,23 @@ applications:
     sort_order: 10
     metadata: {owner: platform}
     menus:
-      - {code: applications, name: 应用管理, route: applications, component: platform-admin.applications, sort_order: 10}
-      - {code: menus, name: 菜单管理, route: menus, component: platform-admin.menus, sort_order: 20}
-      - {code: application-grants, name: 应用授权, route: application-grants, component: platform-admin.application-grants, sort_order: 30}
-      - {code: tenants, name: 租户管理, route: tenants, component: platform-admin.tenants, sort_order: 40}
-      - {code: organization-units, name: 组织架构, route: organization-units, component: platform-admin.organization-units, sort_order: 50}
-      - {code: memberships, name: 成员管理, route: memberships, component: platform-admin.memberships, sort_order: 60}
-      - {code: invitations, name: 邀请管理, route: invitations, component: platform-admin.invitations, sort_order: 70}
-      - {code: groups, name: 用户组, route: groups, component: platform-admin.groups, sort_order: 80}
-      - {code: group-members, name: 用户组成员, route: group-members, component: platform-admin.group-members, sort_order: 90}
-      - {code: quotas, name: 租户配额, route: quotas, component: platform-admin.quotas, sort_order: 100}
-      - {code: users, name: 用户管理, route: users, component: platform-admin.users, sort_order: 110}
-      - {code: service-accounts, name: 服务账号, route: service-accounts, component: platform-admin.service-accounts, sort_order: 120}
-      - {code: sessions, name: 会话管理, route: sessions, component: platform-admin.sessions, sort_order: 130}
-      - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, sort_order: 140}
-      - {code: permissions, name: 权限管理, route: permissions, component: platform-admin.permissions, sort_order: 150}
-      - {code: role-permissions, name: 角色权限, route: role-permissions, component: platform-admin.role-permissions, sort_order: 160}
-      - {code: role-bindings, name: 角色绑定, route: role-bindings, component: platform-admin.role-bindings, sort_order: 170}
+      - {code: applications, name: 应用管理, route: applications, component: platform-admin.applications, permission_code: application.catalog.list, permission_scope: tenant, sort_order: 10}
+      - {code: menus, name: 菜单管理, route: menus, component: platform-admin.menus, permission_code: application.menu.list, permission_scope: tenant, sort_order: 20}
+      - {code: application-grants, name: 应用授权, route: application-grants, component: platform-admin.application-grants, permission_code: application.grant.list, permission_scope: tenant, sort_order: 30}
+      - {code: tenants, name: 租户管理, route: tenants, component: platform-admin.tenants, permission_code: tenant.profile.list, permission_scope: tenant, sort_order: 40}
+      - {code: organization-units, name: 组织架构, route: organization-units, component: platform-admin.organization-units, permission_code: tenant.organization-unit.list, permission_scope: tenant, sort_order: 50}
+      - {code: memberships, name: 成员管理, route: memberships, component: platform-admin.memberships, permission_code: tenant.membership.list, permission_scope: tenant, sort_order: 60}
+      - {code: invitations, name: 邀请管理, route: invitations, component: platform-admin.invitations, permission_code: tenant.invitation.list, permission_scope: tenant, sort_order: 70}
+      - {code: groups, name: 用户组, route: groups, component: platform-admin.groups, permission_code: tenant.group.list, permission_scope: tenant, sort_order: 80}
+      - {code: group-members, name: 用户组成员, route: group-members, component: platform-admin.group-members, permission_code: tenant.group.list-members, permission_scope: tenant, sort_order: 90}
+      - {code: quotas, name: 租户配额, route: quotas, component: platform-admin.quotas, permission_code: tenant.quota.list, permission_scope: tenant, sort_order: 100}
+      - {code: users, name: 用户管理, route: users, component: platform-admin.users, permission_code: identity.user.list, permission_scope: platform, sort_order: 110}
+      - {code: service-accounts, name: 服务账号, route: service-accounts, component: platform-admin.service-accounts, permission_code: identity.service-account.list, permission_scope: platform, sort_order: 120}
+      - {code: sessions, name: 会话管理, route: sessions, component: platform-admin.sessions, permission_code: identity.session.list, permission_scope: platform, sort_order: 130}
+      - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, permission_code: authorization.role.list, permission_scope: tenant, sort_order: 140}
+      - {code: permissions, name: 权限管理, route: permissions, component: platform-admin.permissions, permission_code: authorization.permission.list, permission_scope: tenant, sort_order: 150}
+      - {code: role-permissions, name: 角色权限, route: role-permissions, component: platform-admin.role-permissions, permission_code: authorization.role-permission.list, permission_scope: tenant, sort_order: 160}
+      - {code: role-bindings, name: 角色绑定, route: role-bindings, component: platform-admin.role-bindings, permission_code: authorization.binding.list, permission_scope: tenant, sort_order: 170}
 
   - code: audit-center
     name: 审计中心
@@ -32,7 +32,7 @@ applications:
     default_route: /apps/audit-center/records
     sort_order: 20
     menus:
-      - {code: records, name: 审计记录, route: records, component: audit-center.records, sort_order: 10}
+      - {code: records, name: 审计记录, route: records, component: audit-center.records, permission_code: audit.record.query, permission_scope: tenant, sort_order: 10}
 
   - code: config-center
     name: 配置中心
@@ -41,7 +41,7 @@ applications:
     default_route: /apps/config-center/entries
     sort_order: 30
     menus:
-      - {code: entries, name: 配置项, route: entries, component: config-center.entries, sort_order: 10}
+      - {code: entries, name: 配置项, route: entries, component: config-center.entries, permission_code: config.entry.list, permission_scope: tenant, sort_order: 10}
 
   - code: notification-center
     name: 通知中心
@@ -50,8 +50,8 @@ applications:
     default_route: /apps/notification-center/templates
     sort_order: 40
     menus:
-      - {code: templates, name: 通知模板, route: templates, component: notification-center.templates, sort_order: 10}
-      - {code: deliveries, name: 投递记录, route: deliveries, component: notification-center.deliveries, sort_order: 20}
+      - {code: templates, name: 通知模板, route: templates, component: notification-center.templates, permission_code: notification.template.list, permission_scope: tenant, sort_order: 10}
+      - {code: deliveries, name: 投递记录, route: deliveries, component: notification-center.deliveries, permission_code: notification.delivery.list, permission_scope: tenant, sort_order: 20}
 
   - code: file-center
     name: 文件中心
@@ -60,7 +60,7 @@ applications:
     default_route: /apps/file-center/files
     sort_order: 50
     menus:
-      - {code: files, name: 文件管理, route: files, component: file-center.files, sort_order: 10}
+      - {code: files, name: 文件管理, route: files, component: file-center.files, permission_code: file.object.list, permission_scope: tenant, sort_order: 10}
 
   - code: scheduler-center
     name: 调度中心
@@ -69,7 +69,7 @@ applications:
     default_route: /apps/scheduler-center/jobs
     sort_order: 60
     menus:
-      - {code: jobs, name: 定时任务, route: jobs, component: scheduler-center.jobs, sort_order: 10}
+      - {code: jobs, name: 定时任务, route: jobs, component: scheduler-center.jobs, permission_code: scheduler.job.list, permission_scope: tenant, sort_order: 10}
 
   - code: dictionary-center
     name: 数据字典
@@ -78,8 +78,8 @@ applications:
     default_route: /apps/dictionary-center/definitions
     sort_order: 70
     menus:
-      - {code: definitions, name: 字典定义, route: definitions, component: dictionary-center.definitions, sort_order: 10}
-      - {code: providers, name: Provider 目录, route: providers, component: dictionary-center.providers, sort_order: 20}
+      - {code: definitions, name: 字典定义, route: definitions, component: dictionary-center.definitions, permission_code: dictionary.definition.list, permission_scope: tenant, sort_order: 10}
+      - {code: providers, name: Provider 目录, route: providers, component: dictionary-center.providers, permission_code: dictionary.provider.list, permission_scope: tenant, sort_order: 20}
 
   - code: registry-center
     name: 服务注册中心
@@ -88,7 +88,7 @@ applications:
     default_route: /apps/registry-center/services
     sort_order: 80
     menus:
-      - {code: services, name: 服务目录, route: services, component: registry-center.services, sort_order: 10}
+      - {code: services, name: 服务目录, route: services, component: registry-center.services, permission_code: service_registry.service.list, permission_scope: platform, sort_order: 10}
 
   - code: swagger-center
     name: API 文档中心
@@ -97,7 +97,7 @@ applications:
     default_route: /apps/swagger-center/documents
     sort_order: 90
     menus:
-      - {code: documents, name: API 文档, route: documents, component: swagger-center.documents, sort_order: 10}
+      - {code: documents, name: API 文档, route: documents, component: swagger-center.documents, permission_code: swagger.document.list, permission_scope: platform, sort_order: 10}
 
   - code: workflow-center
     name: 工作流中心
@@ -106,9 +106,9 @@ applications:
     default_route: /apps/workflow-center/definitions
     sort_order: 100
     menus:
-      - {code: definitions, name: 流程定义, route: definitions, component: workflow-center.definitions, sort_order: 10}
-      - {code: instances, name: 流程实例, route: instances, component: workflow-center.instances, sort_order: 20}
-      - {code: tasks, name: 我的任务, route: tasks, component: workflow-center.tasks, sort_order: 30}
+      - {code: definitions, name: 流程定义, route: definitions, component: workflow-center.definitions, permission_code: workflow.definition.list, permission_scope: tenant, sort_order: 10}
+      - {code: instances, name: 流程实例, route: instances, component: workflow-center.instances, permission_code: workflow.instance.list, permission_scope: tenant, sort_order: 20}
+      - {code: tasks, name: 我的任务, route: tasks, component: workflow-center.tasks, permission_code: workflow.task.list, permission_scope: tenant, sort_order: 30}
 
   - code: search-center
     name: 应用搜索
@@ -117,7 +117,7 @@ applications:
     default_route: /apps/search-center/search
     sort_order: 110
     menus:
-      - {code: search, name: 应用搜索, route: search, component: search-center.search, sort_order: 10}
+      - {code: search, name: 应用搜索, route: search, component: search-center.search, permission_code: search.document.search, permission_scope: tenant, sort_order: 10}
 
   - code: metering-center
     name: 计量中心
@@ -126,8 +126,8 @@ applications:
     default_route: /apps/metering-center/usage
     sort_order: 120
     menus:
-      - {code: meters, name: 计量器, route: meters, component: metering-center.meters, sort_order: 10}
-      - {code: usage, name: 用量查询, route: usage, component: metering-center.usage, sort_order: 20}
+      - {code: meters, name: 计量器, route: meters, component: metering-center.meters, permission_code: metering.meter.list, permission_scope: tenant, sort_order: 10}
+      - {code: usage, name: 用量查询, route: usage, component: metering-center.usage, permission_code: metering.usage.query, permission_scope: tenant, sort_order: 20}
 
   - code: billing-center
     name: 计费中心
@@ -136,9 +136,9 @@ applications:
     default_route: /apps/billing-center/subscriptions
     sort_order: 130
     menus:
-      - {code: plans, name: 套餐管理, route: plans, component: billing-center.plans, sort_order: 10}
-      - {code: subscriptions, name: 订阅管理, route: subscriptions, component: billing-center.subscriptions, sort_order: 20}
-      - {code: invoices, name: 账单管理, route: invoices, component: billing-center.invoices, sort_order: 30}
+      - {code: plans, name: 套餐管理, route: plans, component: billing-center.plans, permission_code: billing.plan.list, permission_scope: tenant, sort_order: 10}
+      - {code: subscriptions, name: 订阅管理, route: subscriptions, component: billing-center.subscriptions, permission_code: billing.subscription.list, permission_scope: tenant, sort_order: 20}
+      - {code: invoices, name: 账单管理, route: invoices, component: billing-center.invoices, permission_code: billing.invoice.list, permission_scope: tenant, sort_order: 30}
 
   - code: rule-center
     name: 规则中心
@@ -147,7 +147,7 @@ applications:
     default_route: /apps/rule-center/rules
     sort_order: 140
     menus:
-      - {code: rules, name: 规则管理, route: rules, component: rule-center.rules, sort_order: 10}
+      - {code: rules, name: 规则管理, route: rules, component: rule-center.rules, permission_code: rule.set.list, permission_scope: tenant, sort_order: 10}
 
   - code: import-center
     name: 数据导入
@@ -156,7 +156,7 @@ applications:
     default_route: /apps/import-center/jobs
     sort_order: 150
     menus:
-      - {code: jobs, name: 导入任务, route: jobs, component: import-center.jobs, sort_order: 10}
+      - {code: jobs, name: 导入任务, route: jobs, component: import-center.jobs, permission_code: import.job.list, permission_scope: tenant, sort_order: 10}
 
   - code: export-center
     name: 数据导出
@@ -165,7 +165,7 @@ applications:
     default_route: /apps/export-center/jobs
     sort_order: 160
     menus:
-      - {code: jobs, name: 导出任务, route: jobs, component: export-center.jobs, sort_order: 10}
+      - {code: jobs, name: 导出任务, route: jobs, component: export-center.jobs, permission_code: export.job.list, permission_scope: tenant, sort_order: 10}
 
   - code: webhook-center
     name: Webhook 中心
@@ -174,5 +174,5 @@ applications:
     default_route: /apps/webhook-center/subscriptions
     sort_order: 170
     menus:
-      - {code: subscriptions, name: Webhook 订阅, route: subscriptions, component: webhook-center.subscriptions, sort_order: 10}
-      - {code: deliveries, name: 投递记录, route: deliveries, component: webhook-center.deliveries, sort_order: 20}
+      - {code: subscriptions, name: Webhook 订阅, route: subscriptions, component: webhook-center.subscriptions, permission_code: webhook.subscription.list, permission_scope: tenant, sort_order: 10}
+      - {code: deliveries, name: 投递记录, route: deliveries, component: webhook-center.deliveries, permission_code: webhook.delivery.list, permission_scope: tenant, sort_order: 20}

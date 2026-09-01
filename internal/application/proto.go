@@ -10,7 +10,7 @@ func toProtoApplication(v Application) *applicationv1.Application {
 }
 func ToProtoApplication(v Application) *applicationv1.Application { return toProtoApplication(v) }
 func toProtoMenu(v Menu) *applicationv1.Menu {
-	return &applicationv1.Menu{Id: v.ID, ApplicationId: v.ApplicationID, ReleaseNumber: v.ReleaseNumber, ParentId: v.ParentID, Code: v.Code, Type: v.Type, Name: v.Name, I18NKey: v.I18nKey, Route: v.Route, Component: v.Component, Icon: v.Icon, ExternalUrl: v.ExternalURL, PermissionCode: v.PermissionCode, SortOrder: v.SortOrder, Visible: v.Visible, Status: v.Status, Version: v.Version, CreatedAt: timestamppb.New(v.CreatedAt), UpdatedAt: timestamppb.New(v.UpdatedAt), CreatedBy: v.CreatedBy, UpdatedBy: v.UpdatedBy}
+	return &applicationv1.Menu{Id: v.ID, ApplicationId: v.ApplicationID, ReleaseNumber: v.ReleaseNumber, ParentId: v.ParentID, Code: v.Code, Type: v.Type, Name: v.Name, I18NKey: v.I18nKey, Route: v.Route, Component: v.Component, Icon: v.Icon, ExternalUrl: v.ExternalURL, PermissionCode: v.PermissionCode, PermissionScope: toProtoPermissionScope(v.PermissionScope), SortOrder: v.SortOrder, Visible: v.Visible, Status: v.Status, Version: v.Version, CreatedAt: timestamppb.New(v.CreatedAt), UpdatedAt: timestamppb.New(v.UpdatedAt), CreatedBy: v.CreatedBy, UpdatedBy: v.UpdatedBy}
 }
 func ToProtoMenu(v Menu) *applicationv1.Menu { return toProtoMenu(v) }
 func toProtoRelease(v MenuRelease) *applicationv1.MenuRelease {
@@ -29,5 +29,19 @@ func FromProtoMenu(v *applicationv1.Menu) Menu {
 	if v == nil {
 		return Menu{}
 	}
-	return Menu{ID: v.GetId(), ApplicationID: v.GetApplicationId(), ParentID: v.GetParentId(), Code: v.GetCode(), Type: v.GetType(), Name: v.GetName(), I18nKey: v.GetI18NKey(), Route: v.GetRoute(), Component: v.GetComponent(), Icon: v.GetIcon(), ExternalURL: v.GetExternalUrl(), PermissionCode: v.GetPermissionCode(), SortOrder: v.GetSortOrder(), Visible: v.GetVisible(), Status: v.GetStatus()}
+	return Menu{ID: v.GetId(), ApplicationID: v.GetApplicationId(), ParentID: v.GetParentId(), Code: v.GetCode(), Type: v.GetType(), Name: v.GetName(), I18nKey: v.GetI18NKey(), Route: v.GetRoute(), Component: v.GetComponent(), Icon: v.GetIcon(), ExternalURL: v.GetExternalUrl(), PermissionCode: v.GetPermissionCode(), PermissionScope: fromProtoPermissionScope(v.GetPermissionScope()), SortOrder: v.GetSortOrder(), Visible: v.GetVisible(), Status: v.GetStatus()}
+}
+
+func toProtoPermissionScope(scope string) applicationv1.MenuPermissionScope {
+	if scope == "platform" {
+		return applicationv1.MenuPermissionScope_MENU_PERMISSION_SCOPE_PLATFORM
+	}
+	return applicationv1.MenuPermissionScope_MENU_PERMISSION_SCOPE_TENANT
+}
+
+func fromProtoPermissionScope(scope applicationv1.MenuPermissionScope) string {
+	if scope == applicationv1.MenuPermissionScope_MENU_PERMISSION_SCOPE_PLATFORM {
+		return "platform"
+	}
+	return "tenant"
 }

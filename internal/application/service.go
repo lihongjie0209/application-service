@@ -395,7 +395,10 @@ func (s *Service) BatchCheck(ctx context.Context, tenantID string, ids []string,
 	return v, translate(err)
 }
 func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Menu, error) {
-	v.ApplicationID, v.ID, v.ParentID, v.Code, v.Type, v.Name, v.I18nKey, v.Route, v.Component, v.ExternalURL, v.PermissionCode = strings.TrimSpace(v.ApplicationID), strings.TrimSpace(v.ID), strings.TrimSpace(v.ParentID), strings.TrimSpace(v.Code), strings.TrimSpace(v.Type), strings.TrimSpace(v.Name), strings.TrimSpace(v.I18nKey), strings.TrimSpace(v.Route), strings.TrimSpace(v.Component), strings.TrimSpace(v.ExternalURL), strings.TrimSpace(v.PermissionCode)
+	v.ApplicationID, v.ID, v.ParentID, v.Code, v.Type, v.Name, v.I18nKey, v.Route, v.Component, v.ExternalURL, v.PermissionCode, v.PermissionScope = strings.TrimSpace(v.ApplicationID), strings.TrimSpace(v.ID), strings.TrimSpace(v.ParentID), strings.TrimSpace(v.Code), strings.TrimSpace(v.Type), strings.TrimSpace(v.Name), strings.TrimSpace(v.I18nKey), strings.TrimSpace(v.Route), strings.TrimSpace(v.Component), strings.TrimSpace(v.ExternalURL), strings.ToLower(strings.TrimSpace(v.PermissionCode)), strings.ToLower(strings.TrimSpace(v.PermissionScope))
+	if v.PermissionScope == "" {
+		v.PermissionScope = "tenant"
+	}
 	if v.ApplicationID == "" || v.Code == "" || v.Name == "" || !codePattern.MatchString(v.Code) {
 		return Menu{}, apperror.Invalid("application_id, valid code, and name are required", nil)
 	}
@@ -405,6 +408,9 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 	allowed := map[string]bool{"directory": true, "page": true, "action": true, "external": true}
 	if !allowed[v.Type] {
 		return Menu{}, apperror.Invalid("menu type must be directory, page, action, or external", nil)
+	}
+	if v.PermissionScope != "tenant" && v.PermissionScope != "platform" {
+		return Menu{}, apperror.Invalid("permission_scope must be tenant or platform", nil)
 	}
 	if v.Type == "page" && v.Route == "" {
 		return Menu{}, apperror.Invalid("page menu requires route", nil)

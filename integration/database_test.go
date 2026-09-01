@@ -84,7 +84,7 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			if err := repository.UpdateApplication(ctx, db, application, 1); err == nil {
 				t.Fatal("expected stale application version")
 			}
-			menu := applicationdomain.Menu{ID: "menu-1", ApplicationID: application.ID, Code: "orders.list", Type: "page", Name: "Orders", Route: "/orders", Visible: true, Status: "active", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
+			menu := applicationdomain.Menu{ID: "menu-1", ApplicationID: application.ID, Code: "orders.list", Type: "page", Name: "Orders", Route: "/orders", PermissionCode: "orders.list", PermissionScope: "tenant", Visible: true, Status: "active", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
 			if err := repository.UpsertMenu(ctx, db, menu, 0); err != nil {
 				t.Fatal(err)
 			}

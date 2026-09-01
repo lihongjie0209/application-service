@@ -917,6 +917,9 @@ const docTemplate = `{
                 "permission_code": {
                     "type": "string"
                 },
+                "permission_scope": {
+                    "type": "string"
+                },
                 "release_number": {
                     "type": "integer"
                 },

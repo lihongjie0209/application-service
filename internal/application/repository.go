@@ -38,7 +38,7 @@ type SQLRepository struct{ db *sqlx.DB }
 func NewRepository(db *sqlx.DB) Repository { return &SQLRepository{db: db} }
 
 const applicationColumns = `id,code,name,description,icon,default_route,sort_order,status,metadata_json,published_release,version,created_at,updated_at,created_by,updated_by`
-const menuColumns = `id,application_id,parent_id,menu_code,menu_type,name,i18n_key,route,component,icon,external_url,permission_code,sort_order,visible,status,version,created_at,updated_at,created_by,updated_by`
+const menuColumns = `id,application_id,parent_id,menu_code,menu_type,name,i18n_key,route,component,icon,external_url,permission_code,permission_scope,sort_order,visible,status,version,created_at,updated_at,created_by,updated_by`
 const grantColumns = `id,tenant_id,application_id,status,valid_from,valid_until,source,entitlements_json,version,created_at,updated_at,created_by,updated_by`
 
 func (r *SQLRepository) CreateApplication(ctx context.Context, e sqlx.ExtContext, v Application) error {
@@ -83,10 +83,10 @@ func (r *SQLRepository) GetMenu(ctx context.Context, id string) (Menu, error) {
 }
 func (r *SQLRepository) UpsertMenu(ctx context.Context, e sqlx.ExtContext, v Menu, expected int64) error {
 	if expected == 0 {
-		_, err := e.ExecContext(ctx, r.db.Rebind(`INSERT INTO application_menu_drafts (`+menuColumns+`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`), v.ID, v.ApplicationID, v.ParentID, v.Code, v.Type, v.Name, v.I18nKey, v.Route, v.Component, v.Icon, v.ExternalURL, v.PermissionCode, v.SortOrder, v.Visible, v.Status, v.Version, v.CreatedAt, v.UpdatedAt, v.CreatedBy, v.UpdatedBy)
+		_, err := e.ExecContext(ctx, r.db.Rebind(`INSERT INTO application_menu_drafts (`+menuColumns+`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`), v.ID, v.ApplicationID, v.ParentID, v.Code, v.Type, v.Name, v.I18nKey, v.Route, v.Component, v.Icon, v.ExternalURL, v.PermissionCode, v.PermissionScope, v.SortOrder, v.Visible, v.Status, v.Version, v.CreatedAt, v.UpdatedAt, v.CreatedBy, v.UpdatedBy)
 		return err
 	}
-	res, err := e.ExecContext(ctx, r.db.Rebind(`UPDATE application_menu_drafts SET parent_id=?,menu_code=?,menu_type=?,name=?,i18n_key=?,route=?,component=?,icon=?,external_url=?,permission_code=?,sort_order=?,visible=?,status=?,version=version+1,updated_at=?,updated_by=? WHERE id=? AND version=? AND status<>'deleted'`), v.ParentID, v.Code, v.Type, v.Name, v.I18nKey, v.Route, v.Component, v.Icon, v.ExternalURL, v.PermissionCode, v.SortOrder, v.Visible, v.Status, v.UpdatedAt, v.UpdatedBy, v.ID, expected)
+	res, err := e.ExecContext(ctx, r.db.Rebind(`UPDATE application_menu_drafts SET parent_id=?,menu_code=?,menu_type=?,name=?,i18n_key=?,route=?,component=?,icon=?,external_url=?,permission_code=?,permission_scope=?,sort_order=?,visible=?,status=?,version=version+1,updated_at=?,updated_by=? WHERE id=? AND version=? AND status<>'deleted'`), v.ParentID, v.Code, v.Type, v.Name, v.I18nKey, v.Route, v.Component, v.Icon, v.ExternalURL, v.PermissionCode, v.PermissionScope, v.SortOrder, v.Visible, v.Status, v.UpdatedAt, v.UpdatedBy, v.ID, expected)
 	return stale(res, err)
 }
 func (r *SQLRepository) DeleteMenu(ctx context.Context, e sqlx.ExtContext, id string, expected int64, now time.Time, actor string) error {
@@ -104,7 +104,7 @@ func (r *SQLRepository) CreateRelease(ctx context.Context, e sqlx.ExtContext, v 
 		return err
 	}
 	for _, m := range menus {
-		_, err = e.ExecContext(ctx, r.db.Rebind(`INSERT INTO application_menu_release_items (id,release_id,application_id,release_number,parent_id,menu_code,menu_type,name,i18n_key,route,component,icon,external_url,permission_code,sort_order,visible,status,version,created_at,updated_at,created_by,updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`), m.ID, v.ID, m.ApplicationID, v.ReleaseNumber, m.ParentID, m.Code, m.Type, m.Name, m.I18nKey, m.Route, m.Component, m.Icon, m.ExternalURL, m.PermissionCode, m.SortOrder, m.Visible, m.Status, 1, v.CreatedAt, v.UpdatedAt, v.CreatedBy, v.UpdatedBy)
+		_, err = e.ExecContext(ctx, r.db.Rebind(`INSERT INTO application_menu_release_items (id,release_id,application_id,release_number,parent_id,menu_code,menu_type,name,i18n_key,route,component,icon,external_url,permission_code,permission_scope,sort_order,visible,status,version,created_at,updated_at,created_by,updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`), m.ID, v.ID, m.ApplicationID, v.ReleaseNumber, m.ParentID, m.Code, m.Type, m.Name, m.I18nKey, m.Route, m.Component, m.Icon, m.ExternalURL, m.PermissionCode, m.PermissionScope, m.SortOrder, m.Visible, m.Status, 1, v.CreatedAt, v.UpdatedAt, v.CreatedBy, v.UpdatedBy)
 		if err != nil {
 			return err
 		}
@@ -121,7 +121,7 @@ func (r *SQLRepository) GetRelease(ctx context.Context, appID string, n int64) (
 		return rel, nil, err
 	}
 	items := []Menu{}
-	err = r.db.SelectContext(ctx, &items, r.db.Rebind(`SELECT id,application_id,release_number,parent_id,menu_code,menu_type,name,i18n_key,route,component,icon,external_url,permission_code,sort_order,visible,status,version,created_at,updated_at,created_by,updated_by FROM application_menu_release_items WHERE application_id=? AND release_number=? ORDER BY parent_id,sort_order,id`), appID, n)
+	err = r.db.SelectContext(ctx, &items, r.db.Rebind(`SELECT id,application_id,release_number,parent_id,menu_code,menu_type,name,i18n_key,route,component,icon,external_url,permission_code,permission_scope,sort_order,visible,status,version,created_at,updated_at,created_by,updated_by FROM application_menu_release_items WHERE application_id=? AND release_number=? ORDER BY parent_id,sort_order,id`), appID, n)
 	return rel, items, err
 }
 func (r *SQLRepository) SetPublishedRelease(ctx context.Context, e sqlx.ExtContext, id string, n, expected int64, now time.Time, actor string) error {

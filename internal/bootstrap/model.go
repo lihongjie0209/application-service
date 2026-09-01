@@ -28,18 +28,19 @@ type ApplicationSpec struct {
 }
 
 type MenuSpec struct {
-	Code           string `yaml:"code"`
-	Parent         string `yaml:"parent"`
-	Type           string `yaml:"type"`
-	Name           string `yaml:"name"`
-	I18nKey        string `yaml:"i18n_key"`
-	Route          string `yaml:"route"`
-	Component      string `yaml:"component"`
-	Icon           string `yaml:"icon"`
-	ExternalURL    string `yaml:"external_url"`
-	PermissionCode string `yaml:"permission_code"`
-	SortOrder      int32  `yaml:"sort_order"`
-	Visible        *bool  `yaml:"visible"`
+	Code            string `yaml:"code"`
+	Parent          string `yaml:"parent"`
+	Type            string `yaml:"type"`
+	Name            string `yaml:"name"`
+	I18nKey         string `yaml:"i18n_key"`
+	Route           string `yaml:"route"`
+	Component       string `yaml:"component"`
+	Icon            string `yaml:"icon"`
+	ExternalURL     string `yaml:"external_url"`
+	PermissionCode  string `yaml:"permission_code"`
+	PermissionScope string `yaml:"permission_scope"`
+	SortOrder       int32  `yaml:"sort_order"`
+	Visible         *bool  `yaml:"visible"`
 }
 
 func LoadManifest(path string) (Manifest, error) {
@@ -107,6 +108,10 @@ func (m Manifest) Validate() error {
 			}
 			if menu.Component != "" && !strings.HasPrefix(menu.Component, application.Code+".") {
 				return fmt.Errorf("menu %q component %q does not belong to application %q", menu.Code, menu.Component, application.Code)
+			}
+			permissionScope := strings.ToLower(strings.TrimSpace(menu.PermissionScope))
+			if permissionScope != "" && permissionScope != "tenant" && permissionScope != "platform" {
+				return fmt.Errorf("application %q menu %q has invalid permission_scope %q", application.Code, menu.Code, menu.PermissionScope)
 			}
 			menus[menu.Code] = menu
 		}

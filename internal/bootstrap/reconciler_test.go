@@ -88,7 +88,7 @@ func TestReconcilerApplyIsIdempotent(t *testing.T) {
 	t.Parallel()
 	manifest := Manifest{Applications: []ApplicationSpec{{
 		Code: "orders", Name: "Orders", DefaultRoute: "/apps/orders/list", Metadata: map[string]any{"owner": "commerce"},
-		Menus: []MenuSpec{{Code: "root", Type: "directory", Name: "Orders"}, {Code: "list", Parent: "root", Name: "Order list", Route: "list", Component: "orders.list"}},
+		Menus: []MenuSpec{{Code: "root", Type: "directory", Name: "Orders"}, {Code: "list", Parent: "root", Name: "Order list", Route: "list", Component: "orders.list", PermissionCode: "orders.list", PermissionScope: "platform"}},
 	}}}
 	api := newFakeAPI()
 	reconciler := NewReconciler(api)
@@ -101,6 +101,9 @@ func TestReconcilerApplyIsIdempotent(t *testing.T) {
 	}
 	if api.menus["app-orders"]["list"].ParentID != api.menus["app-orders"]["root"].ID {
 		t.Fatal("child menu did not resolve its parent ID")
+	}
+	if menu := api.menus["app-orders"]["list"]; menu.PermissionCode != "orders.list" || menu.PermissionScope != "platform" {
+		t.Fatalf("permission reference = %q/%q", menu.PermissionScope, menu.PermissionCode)
 	}
 	second, err := reconciler.Apply(t.Context(), manifest, []string{"tenant-1"})
 	if err != nil {
@@ -117,8 +120,9 @@ func TestReconcilerApplyIsIdempotent(t *testing.T) {
 func TestManifestRejectsCrossApplicationPageAndCycles(t *testing.T) {
 	t.Parallel()
 	for name, manifest := range map[string]Manifest{
-		"cross namespace": {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Component: "billing.list"}}}}},
-		"cycle":           {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "a", Parent: "b", Name: "A"}, {Code: "b", Parent: "a", Name: "B"}}}}},
+		"cross namespace":          {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Component: "billing.list"}}}}},
+		"cycle":                    {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "a", Parent: "b", Name: "A"}, {Code: "b", Parent: "a", Name: "B"}}}}},
+		"invalid permission scope": {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Route: "list", Component: "orders.list", PermissionScope: "global"}}}}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if err := manifest.Validate(); err == nil {

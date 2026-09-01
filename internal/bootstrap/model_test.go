@@ -24,6 +24,9 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 				t.Fatalf("duplicate component %q", menu.Component)
 			}
 			components[menu.Component] = struct{}{}
+			if menu.PermissionCode == "" || (menu.PermissionScope != "tenant" && menu.PermissionScope != "platform") {
+				t.Fatalf("component %q has incomplete permission reference %q/%q", menu.Component, menu.PermissionScope, menu.PermissionCode)
+			}
 		}
 	}
 	if len(components) != 41 {

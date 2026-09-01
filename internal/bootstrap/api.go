@@ -20,22 +20,23 @@ type Application struct {
 }
 
 type Menu struct {
-	ID             string `json:"id"`
-	ApplicationID  string `json:"application_id"`
-	ParentID       string `json:"parent_id"`
-	Code           string `json:"code"`
-	Type           string `json:"type"`
-	Name           string `json:"name"`
-	I18nKey        string `json:"i18n_key"`
-	Route          string `json:"route"`
-	Component      string `json:"component"`
-	Icon           string `json:"icon"`
-	ExternalURL    string `json:"external_url"`
-	PermissionCode string `json:"permission_code"`
-	Status         string `json:"status"`
-	SortOrder      int32  `json:"sort_order"`
-	Visible        bool   `json:"visible"`
-	Version        int64  `json:"version"`
+	ID              string `json:"id"`
+	ApplicationID   string `json:"application_id"`
+	ParentID        string `json:"parent_id"`
+	Code            string `json:"code"`
+	Type            string `json:"type"`
+	Name            string `json:"name"`
+	I18nKey         string `json:"i18n_key"`
+	Route           string `json:"route"`
+	Component       string `json:"component"`
+	Icon            string `json:"icon"`
+	ExternalURL     string `json:"external_url"`
+	PermissionCode  string `json:"permission_code"`
+	PermissionScope string `json:"permission_scope"`
+	Status          string `json:"status"`
+	SortOrder       int32  `json:"sort_order"`
+	Visible         bool   `json:"visible"`
+	Version         int64  `json:"version"`
 }
 
 type Grant struct {

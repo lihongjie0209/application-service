@@ -144,7 +144,11 @@ func menuFromSpec(applicationID, parentID string, spec MenuSpec) Menu {
 	if menuType == "" {
 		menuType = "page"
 	}
-	return Menu{ApplicationID: applicationID, ParentID: parentID, Code: spec.Code, Type: menuType, Name: spec.Name, I18nKey: spec.I18nKey, Route: spec.Route, Component: spec.Component, Icon: spec.Icon, ExternalURL: spec.ExternalURL, PermissionCode: spec.PermissionCode, SortOrder: spec.SortOrder, Visible: visible(spec.Visible), Status: "active"}
+	permissionScope := strings.ToLower(strings.TrimSpace(spec.PermissionScope))
+	if permissionScope == "" {
+		permissionScope = "tenant"
+	}
+	return Menu{ApplicationID: applicationID, ParentID: parentID, Code: spec.Code, Type: menuType, Name: spec.Name, I18nKey: spec.I18nKey, Route: spec.Route, Component: spec.Component, Icon: spec.Icon, ExternalURL: spec.ExternalURL, PermissionCode: strings.ToLower(strings.TrimSpace(spec.PermissionCode)), PermissionScope: permissionScope, SortOrder: spec.SortOrder, Visible: visible(spec.Visible), Status: "active"}
 }
 
 func menuEqual(left, right Menu) bool {
