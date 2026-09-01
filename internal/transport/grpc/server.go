@@ -74,19 +74,19 @@ func applicationGRPCRequirement(enabled bool) platformauthz.GRPCResolver {
 			return platformauthz.Requirement{}, false
 		}
 		requirements := map[string]platformauthz.Requirement{
-			applicationv1.ApplicationService_CreateApplication_FullMethodName:            {Resource: "application.catalog", Action: "create"},
-			applicationv1.ApplicationService_UpdateApplication_FullMethodName:            {Resource: "application.catalog", Action: "update"},
-			applicationv1.ApplicationService_GetApplication_FullMethodName:               {Resource: "application.catalog", Action: "read"},
-			applicationv1.ApplicationService_ListApplications_FullMethodName:             {Resource: "application.catalog", Action: "list"},
-			applicationv1.ApplicationService_UpsertMenu_FullMethodName:                   {Resource: "application.menu", Action: "update"},
-			applicationv1.ApplicationService_DeleteMenu_FullMethodName:                   {Resource: "application.menu", Action: "delete"},
-			applicationv1.ApplicationService_ListMenuDraft_FullMethodName:                {Resource: "application.menu", Action: "list"},
-			applicationv1.ApplicationService_PublishMenus_FullMethodName:                 {Resource: "application.menu", Action: "publish"},
-			applicationv1.ApplicationService_GetPublishedNavigation_FullMethodName:       {Resource: "application.navigation", Action: "read"},
-			applicationv1.ApplicationService_GrantTenantApplication_FullMethodName:       {Resource: "application.grant", Action: "grant"},
-			applicationv1.ApplicationService_RevokeTenantApplication_FullMethodName:      {Resource: "application.grant", Action: "revoke"},
-			applicationv1.ApplicationService_ListTenantApplications_FullMethodName:       {Resource: "application.grant", Action: "list"},
-			applicationv1.ApplicationService_BatchCheckTenantApplications_FullMethodName: {Resource: "application.grant", Action: "check"},
+			applicationv1.ApplicationService_CreateApplication_FullMethodName:            {Resource: "application.catalog", Action: "create", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_UpdateApplication_FullMethodName:            {Resource: "application.catalog", Action: "update", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_GetApplication_FullMethodName:               {Resource: "application.catalog", Action: "read", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_ListApplications_FullMethodName:             {Resource: "application.catalog", Action: "list", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_UpsertMenu_FullMethodName:                   {Resource: "application.menu", Action: "update", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_DeleteMenu_FullMethodName:                   {Resource: "application.menu", Action: "delete", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_ListMenuDraft_FullMethodName:                {Resource: "application.menu", Action: "list", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_PublishMenus_FullMethodName:                 {Resource: "application.menu", Action: "publish", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_GetPublishedNavigation_FullMethodName:       {Resource: "application.navigation", Action: "read", Scope: platformauthz.ScopePrincipal},
+			applicationv1.ApplicationService_GrantTenantApplication_FullMethodName:       {Resource: "application.grant", Action: "grant", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_RevokeTenantApplication_FullMethodName:      {Resource: "application.grant", Action: "revoke", Scope: platformauthz.ScopePlatform},
+			applicationv1.ApplicationService_ListTenantApplications_FullMethodName:       {Resource: "application.grant", Action: "list", Scope: platformauthz.ScopePrincipal},
+			applicationv1.ApplicationService_BatchCheckTenantApplications_FullMethodName: {Resource: "application.grant", Action: "check", Scope: platformauthz.ScopePrincipal},
 		}
 		requirement, ok := requirements[method]
 		return requirement, ok

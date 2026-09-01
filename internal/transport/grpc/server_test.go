@@ -6,6 +6,7 @@ import (
 
 	"github.com/lihongjie0209/application-service/internal/auth"
 	"github.com/lihongjie0209/application-service/internal/config"
+	platformauthz "github.com/lihongjie0209/microservice-platform-go/authz"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 	"google.golang.org/grpc/codes"
@@ -72,6 +73,31 @@ func TestApplicationGRPCRequirementCoversEveryBusinessMethod(t *testing.T) {
 	}
 	if _, ok := applicationGRPCRequirement(false)(methods[0]); ok {
 		t.Fatal("disabled authorization must not call the decision service")
+	}
+}
+
+func TestApplicationGRPCRequirementSeparatesPlatformManagementFromPrincipalReads(t *testing.T) {
+	t.Parallel()
+	resolve := applicationGRPCRequirement(true)
+	for _, method := range []string{
+		applicationv1.ApplicationService_CreateApplication_FullMethodName,
+		applicationv1.ApplicationService_PublishMenus_FullMethodName,
+		applicationv1.ApplicationService_GrantTenantApplication_FullMethodName,
+	} {
+		requirement, _ := resolve(method)
+		if requirement.Scope != platformauthz.ScopePlatform {
+			t.Fatalf("method %q scope = %v, want platform", method, requirement.Scope)
+		}
+	}
+	for _, method := range []string{
+		applicationv1.ApplicationService_GetPublishedNavigation_FullMethodName,
+		applicationv1.ApplicationService_ListTenantApplications_FullMethodName,
+		applicationv1.ApplicationService_BatchCheckTenantApplications_FullMethodName,
+	} {
+		requirement, _ := resolve(method)
+		if requirement.Scope != platformauthz.ScopePrincipal {
+			t.Fatalf("method %q scope = %v, want principal-derived", method, requirement.Scope)
+		}
 	}
 }
 
