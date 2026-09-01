@@ -335,6 +335,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/applications/navigation/batch-get": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "menus"
+                ],
+                "summary": "Get published navigation for multiple granted applications",
+                "parameters": [
+                    {
+                        "description": "Application IDs",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httptransport.BatchNavigationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httptransport.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "body": {
+                                            "$ref": "#/definitions/httptransport.BatchNavigationResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/applications/navigation/get": {
             "post": {
                 "security": [
@@ -1108,6 +1158,31 @@ const docTemplate = `{
                 },
                 "tenant_id": {
                     "type": "string"
+                }
+            }
+        },
+        "httptransport.BatchNavigationRequest": {
+            "type": "object",
+            "required": [
+                "application_ids"
+            ],
+            "properties": {
+                "application_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "httptransport.BatchNavigationResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httptransport.NavigationResponse"
+                    }
                 }
             }
         },

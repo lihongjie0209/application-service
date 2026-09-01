@@ -30,6 +30,13 @@ type ApplicationInput struct {
 	Code, Name, Description, Icon, DefaultRoute, Status, MetadataJSON string
 	SortOrder                                                         int32
 }
+
+type PublishedNavigation struct {
+	Application Application
+	Release     MenuRelease
+	Menus       []Menu
+}
+
 type Service struct {
 	repository Repository
 	transactor *database.Transactor
@@ -254,6 +261,71 @@ func (s *Service) GetPublishedNavigation(ctx context.Context, appID string) (App
 	}
 	rel, menus, err := s.repository.GetRelease(ctx, appID, app.PublishedRelease)
 	return app, rel, menus, translate(err)
+}
+
+func (s *Service) ListPublishedNavigations(ctx context.Context, appIDs []string) ([]PublishedNavigation, error) {
+	ids, err := uniqueApplicationIDs(appIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantID, scoped, err := tenantScope(ctx)
+	if err != nil {
+		return nil, err
+	}
+	active := map[string]bool{}
+	if scoped {
+		active, err = s.repository.BatchActiveGrants(ctx, tenantID, ids, s.now())
+		if err != nil {
+			return nil, translate(err)
+		}
+	}
+
+	items := make([]PublishedNavigation, 0, len(ids))
+	for _, appID := range ids {
+		if scoped && !active[appID] {
+			continue
+		}
+		app, getErr := s.repository.GetApplication(ctx, appID)
+		if errors.Is(getErr, ErrNotFound) {
+			continue
+		}
+		if getErr != nil {
+			return nil, translate(getErr)
+		}
+		if app.PublishedRelease == 0 {
+			continue
+		}
+		release, menus, getErr := s.repository.GetRelease(ctx, appID, app.PublishedRelease)
+		if errors.Is(getErr, ErrNotFound) {
+			continue
+		}
+		if getErr != nil {
+			return nil, translate(getErr)
+		}
+		items = append(items, PublishedNavigation{Application: app, Release: release, Menus: menus})
+	}
+	return items, nil
+}
+
+func uniqueApplicationIDs(values []string) ([]string, error) {
+	if len(values) == 0 || len(values) > 100 {
+		return nil, apperror.Invalid("application_ids must contain between 1 and 100 items", nil)
+	}
+	ids := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		id := strings.TrimSpace(value)
+		if id == "" {
+			return nil, apperror.Invalid("application_ids must not contain empty values", nil)
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }
 func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.Time, until *time.Time, source, entitlements string, expected int64) (Grant, error) {
 	actor, err := actor(ctx)

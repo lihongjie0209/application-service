@@ -28,7 +28,7 @@ func TestApplicationHTTPRequirementCoversEveryBusinessRoute(t *testing.T) {
 	for _, route := range []string{
 		"/api/v1/applications/create", "/api/v1/applications/update", "/api/v1/applications/get", "/api/v1/applications/list",
 		"/api/v1/applications/menus/upsert", "/api/v1/applications/menus/delete", "/api/v1/applications/menus/draft/list", "/api/v1/applications/menus/publish",
-		"/api/v1/applications/navigation/get", "/api/v1/applications/tenant-grants/grant", "/api/v1/applications/tenant-grants/revoke",
+		"/api/v1/applications/navigation/get", "/api/v1/applications/navigation/batch-get", "/api/v1/applications/tenant-grants/grant", "/api/v1/applications/tenant-grants/revoke",
 		"/api/v1/applications/tenant-grants/list", "/api/v1/applications/tenant-grants/manage/list", "/api/v1/applications/tenant-grants/batch-check",
 	} {
 		if requirement, ok := applicationHTTPRequirement(route); !ok || requirement.Resource == "" || requirement.Action == "" {
@@ -55,6 +55,7 @@ func TestApplicationHTTPRequirementSeparatesPlatformManagementFromTenantConsumpt
 	}
 	for _, route := range []string{
 		"/api/v1/applications/navigation/get",
+		"/api/v1/applications/navigation/batch-get",
 		"/api/v1/applications/tenant-grants/list",
 	} {
 		requirement, ok := applicationHTTPRequirement(route)

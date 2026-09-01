@@ -182,6 +182,22 @@ definitions:
     - application_ids
     - tenant_id
     type: object
+  httptransport.BatchNavigationRequest:
+    properties:
+      application_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - application_ids
+    type: object
+  httptransport.BatchNavigationResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/httptransport.NavigationResponse'
+        type: array
+    type: object
   httptransport.CreateApplicationRequest:
     properties:
       code:
@@ -569,6 +585,34 @@ paths:
       security:
       - Bearer: []
       summary: Create or update a menu draft
+      tags:
+      - menus
+  /api/v1/applications/navigation/batch-get:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Application IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/httptransport.BatchNavigationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httptransport.Response'
+            - properties:
+                body:
+                  $ref: '#/definitions/httptransport.BatchNavigationResponse'
+              type: object
+      security:
+      - Bearer: []
+      summary: Get published navigation for multiple granted applications
       tags:
       - menus
   /api/v1/applications/navigation/get:

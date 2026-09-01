@@ -70,6 +70,7 @@ func NewServer(lc fx.Lifecycle, cfg config.Config, handler *Handler, authService
 	api.POST("/applications/menus/draft/list", handler.ListMenuDraft)
 	api.POST("/applications/menus/publish", handler.PublishMenus)
 	api.POST("/applications/navigation/get", handler.GetNavigation)
+	api.POST("/applications/navigation/batch-get", handler.ListNavigations)
 	api.POST("/applications/tenant-grants/grant", handler.Grant)
 	api.POST("/applications/tenant-grants/revoke", handler.Revoke)
 	api.POST("/applications/tenant-grants/list", handler.ListTenantApplications)

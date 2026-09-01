@@ -261,6 +261,7 @@ func applicationHTTPRequirement(route string) (platformauthz.Requirement, bool) 
 		"/api/v1/applications/menus/draft/list":          {Resource: "application.menu", Action: "list", Scope: platformauthz.ScopePlatform},
 		"/api/v1/applications/menus/publish":             {Resource: "application.menu", Action: "publish", Scope: platformauthz.ScopePlatform},
 		"/api/v1/applications/navigation/get":            {Resource: "application.navigation", Action: "read", Scope: platformauthz.ScopePrincipal},
+		"/api/v1/applications/navigation/batch-get":      {Resource: "application.navigation", Action: "read", Scope: platformauthz.ScopePrincipal},
 		"/api/v1/applications/tenant-grants/grant":       {Resource: "application.grant", Action: "grant", Scope: platformauthz.ScopePlatform},
 		"/api/v1/applications/tenant-grants/revoke":      {Resource: "application.grant", Action: "revoke", Scope: platformauthz.ScopePlatform},
 		"/api/v1/applications/tenant-grants/manage/list": {Resource: "application.grant", Action: "list", Scope: platformauthz.ScopePlatform},

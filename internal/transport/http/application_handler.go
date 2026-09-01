@@ -65,6 +65,12 @@ type NavigationResponse struct {
 	Release     application.MenuRelease `json:"release"`
 	Menus       []application.Menu      `json:"menus"`
 }
+type BatchNavigationRequest struct {
+	ApplicationIDs []string `json:"application_ids" binding:"required"`
+}
+type BatchNavigationResponse struct {
+	Items []NavigationResponse `json:"items"`
+}
 type GrantRequest struct {
 	TenantID         string     `json:"tenant_id" binding:"required"`
 	ApplicationID    string     `json:"application_id" binding:"required"`
@@ -278,6 +284,32 @@ func (h *Handler) GetNavigation(c *gin.Context) {
 	}
 	app, rel, menus, err := h.applications.GetPublishedNavigation(c.Request.Context(), r.ApplicationID)
 	respond(c, h.logger, NavigationResponse{Application: app, Release: rel, Menus: menus}, err)
+}
+
+// ListNavigations godoc
+// @Summary Get published navigation for multiple granted applications
+// @Tags menus
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body BatchNavigationRequest true "Application IDs"
+// @Success 200 {object} Response{body=BatchNavigationResponse}
+// @Router /api/v1/applications/navigation/batch-get [post]
+func (h *Handler) ListNavigations(c *gin.Context) {
+	var request BatchNavigationRequest
+	if !bind(c, h.logger, &request) {
+		return
+	}
+	items, err := h.applications.ListPublishedNavigations(c.Request.Context(), request.ApplicationIDs)
+	response := BatchNavigationResponse{Items: make([]NavigationResponse, 0, len(items))}
+	for _, item := range items {
+		response.Items = append(response.Items, NavigationResponse{
+			Application: item.Application,
+			Release:     item.Release,
+			Menus:       item.Menus,
+		})
+	}
+	respond(c, h.logger, response, err)
 }
 
 // Grant godoc

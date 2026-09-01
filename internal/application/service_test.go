@@ -44,6 +44,76 @@ func TestGetPublishedNavigationRequiresActiveTenantGrant(t *testing.T) {
 	}
 }
 
+type batchNavigationRepository struct {
+	Repository
+	active map[string]bool
+}
+
+func (r batchNavigationRepository) BatchActiveGrants(context.Context, string, []string, time.Time) (map[string]bool, error) {
+	return r.active, nil
+}
+
+func (batchNavigationRepository) GetApplication(_ context.Context, id string) (Application, error) {
+	switch id {
+	case "published":
+		return Application{ID: id, PublishedRelease: 2}, nil
+	case "draft":
+		return Application{ID: id}, nil
+	default:
+		return Application{}, ErrNotFound
+	}
+}
+
+func (batchNavigationRepository) GetRelease(_ context.Context, appID string, release int64) (MenuRelease, []Menu, error) {
+	return MenuRelease{ID: "release-2", ApplicationID: appID, ReleaseNumber: release}, []Menu{{ID: "menu-1"}}, nil
+}
+
+func TestListPublishedNavigationsFiltersAndDeduplicates(t *testing.T) {
+	t.Parallel()
+	ctx := principal.WithContext(t.Context(), principal.Principal{
+		ID:       "user-1",
+		Type:     principal.TypeUser,
+		TenantID: "tenant-1",
+	})
+	service := &Service{
+		repository: batchNavigationRepository{active: map[string]bool{
+			"published": true,
+			"draft":     true,
+		}},
+		now: time.Now,
+	}
+
+	items, err := service.ListPublishedNavigations(ctx, []string{" published ", "denied", "draft", "published"})
+	if err != nil {
+		t.Fatalf("ListPublishedNavigations() error = %v", err)
+	}
+	if len(items) != 1 || items[0].Application.ID != "published" || items[0].Release.ReleaseNumber != 2 {
+		t.Fatalf("ListPublishedNavigations() = %+v, want published navigation only", items)
+	}
+}
+
+func TestListPublishedNavigationsValidatesInput(t *testing.T) {
+	t.Parallel()
+	service := &Service{repository: batchNavigationRepository{}, now: time.Now}
+	ctx := principal.WithContext(t.Context(), principal.Principal{ID: "system", Type: principal.TypeSystem})
+
+	for _, test := range []struct {
+		name string
+		ids  []string
+	}{
+		{name: "empty list"},
+		{name: "empty item", ids: []string{"app-1", " "}},
+		{name: "over limit", ids: make([]string, 101)},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if _, err := service.ListPublishedNavigations(ctx, test.ids); appErrorCode(err) != apperror.CodeInvalidArgument {
+				t.Fatalf("ListPublishedNavigations() error = %#v, want invalid argument", err)
+			}
+		})
+	}
+}
+
 func appErrorCode(err error) int {
 	var appErr *apperror.Error
 	if errors.As(err, &appErr) {
