@@ -108,6 +108,34 @@ func TestValidateMenuTree(t *testing.T) {
 	})
 }
 
+func TestValidExternalURL(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		raw  string
+		want bool
+	}{
+		{name: "https", raw: "https://docs.example.com/path?lang=zh#api", want: true},
+		{name: "http development endpoint", raw: "http://localhost:8080/docs", want: true},
+		{name: "javascript scheme", raw: "javascript:alert(1)"},
+		{name: "data scheme", raw: "data:text/html,unsafe"},
+		{name: "protocol relative", raw: "//example.com/docs"},
+		{name: "relative", raw: "/docs"},
+		{name: "missing host", raw: "https:///docs"},
+		{name: "userinfo", raw: "https://user:secret@example.com/docs"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if got := validExternalURL(test.raw); got != test.want {
+				t.Fatalf("validExternalURL(%q) = %v, want %v", test.raw, got, test.want)
+			}
+		})
+	}
+}
+
 func TestSearchDocumentUsesTenantVisibilityAndCompositeVersion(t *testing.T) {
 	createdAt := time.Date(2026, time.August, 31, 10, 0, 0, 0, time.FixedZone("CST", 8*60*60))
 	updatedAt := createdAt.Add(time.Hour)

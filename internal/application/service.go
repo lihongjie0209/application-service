@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -411,6 +412,9 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 	if v.Type == "external" && v.ExternalURL == "" {
 		return Menu{}, apperror.Invalid("external menu requires external_url", nil)
 	}
+	if v.Type == "external" && !validExternalURL(v.ExternalURL) {
+		return Menu{}, apperror.Invalid("external menu requires an absolute HTTP(S) URL without user information", nil)
+	}
 	if _, err := s.repository.GetApplication(ctx, v.ApplicationID); err != nil {
 		return Menu{}, translate(err)
 	}
@@ -436,6 +440,14 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 		return Menu{}, err
 	}
 	return v, nil
+}
+
+func validExternalURL(raw string) bool {
+	parsed, err := url.ParseRequestURI(raw)
+	if err != nil || parsed.Host == "" || parsed.User != nil {
+		return false
+	}
+	return parsed.Scheme == "https" || parsed.Scheme == "http"
 }
 func validateMenuTree(items []Menu) error {
 	byID := map[string]Menu{}
