@@ -20,6 +20,7 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 		"platform-admin.menus":              true,
 		"platform-admin.application-grants": true,
 		"billing-center.plans":              true,
+		"dictionary-center.providers":       true,
 		"platform-admin.tenants":            true,
 		"metering-center.meters":            true,
 	}

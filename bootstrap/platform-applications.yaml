@@ -79,7 +79,7 @@ applications:
     sort_order: 70
     menus:
       - {code: definitions, name: 字典定义, route: definitions, component: dictionary-center.definitions, permission_code: dictionary.definition.list, permission_scope: tenant, sort_order: 10}
-      - {code: providers, name: Provider 目录, route: providers, component: dictionary-center.providers, permission_code: dictionary.provider.list, permission_scope: tenant, sort_order: 20}
+      - {code: providers, name: Provider 目录, route: providers, component: dictionary-center.providers, permission_code: dictionary.provider.list, permission_scope: platform, sort_order: 20}
 
   - code: registry-center
     name: 服务注册中心
