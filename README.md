@@ -4,6 +4,25 @@ Platform application catalog, menu publication, and tenant-application grant ser
 
 The service owns application metadata, mutable menu drafts, immutable published menu releases, and tenant grants. It does not read tenant or authorization schemas: tenant IDs are external references, while permission decisions remain owned by authorization-service.
 
+## Platform bootstrap
+
+`platform-bootstrap` is a Cobra/Viper CLI that idempotently reconciles the checked-in `bootstrap/platform-applications.yaml` catalog through application-service's POST+JSON API. It creates or updates all platform applications, resolves menu parent IDs, publishes only changed menu drafts, and optionally grants every application to one or more initial tenants. It never reads the application database directly and never deletes undeclared applications or menus; destructive pruning requires a future explicit operator workflow.
+
+Configuration precedence is flag > `PLATFORM_BOOTSTRAP_*` environment > optional `.platform-bootstrap.yaml` > defaults. Use a short-lived JWT or restricted PSK through the Authorization header; do not commit it:
+
+```bash
+export PLATFORM_BOOTSTRAP_BASE_URL=http://127.0.0.1:8080
+export PLATFORM_BOOTSTRAP_AUTHORIZATION='Bearer replace-with-short-lived-token'
+export PLATFORM_BOOTSTRAP_TENANT_IDS='tenant-id-1,tenant-id-2'
+make bootstrap-apply
+
+# Machine-readable output and shell completion are also supported.
+go run ./cmd/platform-bootstrap apply --output json
+go run ./cmd/platform-bootstrap completion zsh
+```
+
+The application-service image contains `/app/platform-bootstrap` and the default manifest. After migration and service readiness, Kubernetes can run `deployments/bootstrap-job.yaml`; inject `bootstrap_authorization` and `bootstrap_tenant_ids` from the secret manager. Re-running the Job is safe and reports zero changes once state converges.
+
 
 ## Quick start
 

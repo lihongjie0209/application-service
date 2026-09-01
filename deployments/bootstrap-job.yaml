@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: application-service-bootstrap
+  namespace: platform
+  labels:
+    app.kubernetes.io/name: application-service-bootstrap
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: application-service-bootstrap
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: bootstrap
+          image: ghcr.io/lihongjie0209/application-service:replace-me
+          imagePullPolicy: IfNotPresent
+          command: [/app/platform-bootstrap, apply]
+          env:
+            - {name: PLATFORM_BOOTSTRAP_BASE_URL, value: http://application-service.platform.svc.cluster.local:8080}
+            - {name: PLATFORM_BOOTSTRAP_MANIFEST, value: /app/bootstrap/platform-applications.yaml}
+            - name: PLATFORM_BOOTSTRAP_AUTHORIZATION
+              valueFrom: {secretKeyRef: {name: application-service, key: bootstrap_authorization}}
+            - name: PLATFORM_BOOTSTRAP_TENANT_IDS
+              valueFrom: {secretKeyRef: {name: application-service, key: bootstrap_tenant_ids}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}

@@ -1,0 +1,178 @@
+applications:
+  - code: platform-admin
+    name: 平台管理
+    description: 用户、租户、应用和统一授权管理
+    icon: mdi:shield-account-outline
+    default_route: /apps/platform-admin/applications
+    sort_order: 10
+    metadata: {owner: platform}
+    menus:
+      - {code: applications, name: 应用管理, route: applications, component: platform-admin.applications, sort_order: 10}
+      - {code: menus, name: 菜单管理, route: menus, component: platform-admin.menus, sort_order: 20}
+      - {code: application-grants, name: 应用授权, route: application-grants, component: platform-admin.application-grants, sort_order: 30}
+      - {code: tenants, name: 租户管理, route: tenants, component: platform-admin.tenants, sort_order: 40}
+      - {code: organization-units, name: 组织架构, route: organization-units, component: platform-admin.organization-units, sort_order: 50}
+      - {code: memberships, name: 成员管理, route: memberships, component: platform-admin.memberships, sort_order: 60}
+      - {code: invitations, name: 邀请管理, route: invitations, component: platform-admin.invitations, sort_order: 70}
+      - {code: groups, name: 用户组, route: groups, component: platform-admin.groups, sort_order: 80}
+      - {code: group-members, name: 用户组成员, route: group-members, component: platform-admin.group-members, sort_order: 90}
+      - {code: quotas, name: 租户配额, route: quotas, component: platform-admin.quotas, sort_order: 100}
+      - {code: users, name: 用户管理, route: users, component: platform-admin.users, sort_order: 110}
+      - {code: service-accounts, name: 服务账号, route: service-accounts, component: platform-admin.service-accounts, sort_order: 120}
+      - {code: sessions, name: 会话管理, route: sessions, component: platform-admin.sessions, sort_order: 130}
+      - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, sort_order: 140}
+      - {code: permissions, name: 权限管理, route: permissions, component: platform-admin.permissions, sort_order: 150}
+      - {code: role-permissions, name: 角色权限, route: role-permissions, component: platform-admin.role-permissions, sort_order: 160}
+      - {code: role-bindings, name: 角色绑定, route: role-bindings, component: platform-admin.role-bindings, sort_order: 170}
+
+  - code: audit-center
+    name: 审计中心
+    description: 当前应用的不可变审计记录查询与导出
+    icon: mdi:clipboard-text-clock-outline
+    default_route: /apps/audit-center/records
+    sort_order: 20
+    menus:
+      - {code: records, name: 审计记录, route: records, component: audit-center.records, sort_order: 10}
+
+  - code: config-center
+    name: 配置中心
+    description: 应用动态配置、审批、发布与回滚
+    icon: mdi:tune-variant
+    default_route: /apps/config-center/entries
+    sort_order: 30
+    menus:
+      - {code: entries, name: 配置项, route: entries, component: config-center.entries, sort_order: 10}
+
+  - code: notification-center
+    name: 通知中心
+    description: 通知模板和投递状态管理
+    icon: mdi:bell-outline
+    default_route: /apps/notification-center/templates
+    sort_order: 40
+    menus:
+      - {code: templates, name: 通知模板, route: templates, component: notification-center.templates, sort_order: 10}
+      - {code: deliveries, name: 投递记录, route: deliveries, component: notification-center.deliveries, sort_order: 20}
+
+  - code: file-center
+    name: 文件中心
+    description: 应用文件上传、下载、扫描与生命周期管理
+    icon: mdi:folder-multiple-outline
+    default_route: /apps/file-center/files
+    sort_order: 50
+    menus:
+      - {code: files, name: 文件管理, route: files, component: file-center.files, sort_order: 10}
+
+  - code: scheduler-center
+    name: 调度中心
+    description: 应用定时任务与执行记录管理
+    icon: mdi:calendar-clock-outline
+    default_route: /apps/scheduler-center/jobs
+    sort_order: 60
+    menus:
+      - {code: jobs, name: 定时任务, route: jobs, component: scheduler-center.jobs, sort_order: 10}
+
+  - code: dictionary-center
+    name: 数据字典
+    description: 静态字典和动态 Provider 统一入口
+    icon: mdi:book-open-page-variant-outline
+    default_route: /apps/dictionary-center/definitions
+    sort_order: 70
+    menus:
+      - {code: definitions, name: 字典定义, route: definitions, component: dictionary-center.definitions, sort_order: 10}
+      - {code: providers, name: Provider 目录, route: providers, component: dictionary-center.providers, sort_order: 20}
+
+  - code: registry-center
+    name: 服务注册中心
+    description: 应用层服务实例与租约目录
+    icon: mdi:server-network
+    default_route: /apps/registry-center/services
+    sort_order: 80
+    menus:
+      - {code: services, name: 服务目录, route: services, component: registry-center.services, sort_order: 10}
+
+  - code: swagger-center
+    name: API 文档中心
+    description: 自动发现并聚合平台 OpenAPI 文档
+    icon: mdi:api
+    default_route: /apps/swagger-center/documents
+    sort_order: 90
+    menus:
+      - {code: documents, name: API 文档, route: documents, component: swagger-center.documents, sort_order: 10}
+
+  - code: workflow-center
+    name: 工作流中心
+    description: 工作流定义、实例与人工任务
+    icon: mdi:transit-connection-variant
+    default_route: /apps/workflow-center/definitions
+    sort_order: 100
+    menus:
+      - {code: definitions, name: 流程定义, route: definitions, component: workflow-center.definitions, sort_order: 10}
+      - {code: instances, name: 流程实例, route: instances, component: workflow-center.instances, sort_order: 20}
+      - {code: tasks, name: 我的任务, route: tasks, component: workflow-center.tasks, sort_order: 30}
+
+  - code: search-center
+    name: 应用搜索
+    description: 当前应用内跨域投影搜索
+    icon: mdi:magnify
+    default_route: /apps/search-center/search
+    sort_order: 110
+    menus:
+      - {code: search, name: 应用搜索, route: search, component: search-center.search, sort_order: 10}
+
+  - code: metering-center
+    name: 计量中心
+    description: 计量器目录与应用用量查询
+    icon: mdi:gauge
+    default_route: /apps/metering-center/usage
+    sort_order: 120
+    menus:
+      - {code: meters, name: 计量器, route: meters, component: metering-center.meters, sort_order: 10}
+      - {code: usage, name: 用量查询, route: usage, component: metering-center.usage, sort_order: 20}
+
+  - code: billing-center
+    name: 计费中心
+    description: 套餐、订阅和账单管理
+    icon: mdi:credit-card-outline
+    default_route: /apps/billing-center/subscriptions
+    sort_order: 130
+    menus:
+      - {code: plans, name: 套餐管理, route: plans, component: billing-center.plans, sort_order: 10}
+      - {code: subscriptions, name: 订阅管理, route: subscriptions, component: billing-center.subscriptions, sort_order: 20}
+      - {code: invoices, name: 账单管理, route: invoices, component: billing-center.invoices, sort_order: 30}
+
+  - code: rule-center
+    name: 规则中心
+    description: 应用规则版本、发布和执行
+    icon: mdi:code-braces
+    default_route: /apps/rule-center/rules
+    sort_order: 140
+    menus:
+      - {code: rules, name: 规则管理, route: rules, component: rule-center.rules, sort_order: 10}
+
+  - code: import-center
+    name: 数据导入
+    description: 应用级异步数据导入任务
+    icon: mdi:database-import-outline
+    default_route: /apps/import-center/jobs
+    sort_order: 150
+    menus:
+      - {code: jobs, name: 导入任务, route: jobs, component: import-center.jobs, sort_order: 10}
+
+  - code: export-center
+    name: 数据导出
+    description: 应用级异步数据导出任务
+    icon: mdi:database-export-outline
+    default_route: /apps/export-center/jobs
+    sort_order: 160
+    menus:
+      - {code: jobs, name: 导出任务, route: jobs, component: export-center.jobs, sort_order: 10}
+
+  - code: webhook-center
+    name: Webhook 中心
+    description: 应用 Webhook 订阅与投递管理
+    icon: mdi:webhook
+    default_route: /apps/webhook-center/subscriptions
+    sort_order: 170
+    menus:
+      - {code: subscriptions, name: Webhook 订阅, route: subscriptions, component: webhook-center.subscriptions, sort_order: 10}
+      - {code: deliveries, name: 投递记录, route: deliveries, component: webhook-center.deliveries, sort_order: 20}

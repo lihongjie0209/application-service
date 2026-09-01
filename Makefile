@@ -1,4 +1,4 @@
-.PHONY: run build docker-build test test-race test-integration ci-test-integration lint fmt swagger swagger-check migrate-up migrate-down dev-up dev-down dev-logs
+.PHONY: run build bootstrap-build bootstrap-apply docker-build test test-race test-integration ci-test-integration lint fmt swagger swagger-check migrate-up migrate-down dev-up dev-down dev-logs
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT ?= $(shell git rev-parse --verify HEAD 2>/dev/null || echo unknown)
@@ -12,6 +12,13 @@ run:
 build:
 	go build -ldflags="$(LDFLAGS)" -o bin/api ./cmd/api
 	go build -trimpath -o bin/migrate ./cmd/migrate
+	go build -trimpath -ldflags="$(LDFLAGS)" -o bin/platform-bootstrap ./cmd/platform-bootstrap
+
+bootstrap-build:
+	go build -trimpath -ldflags="$(LDFLAGS)" -o bin/platform-bootstrap ./cmd/platform-bootstrap
+
+bootstrap-apply:
+	go run ./cmd/platform-bootstrap apply
 
 docker-build:
 	docker build \
