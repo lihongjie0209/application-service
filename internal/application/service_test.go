@@ -245,6 +245,37 @@ func TestValidateMenuRoutesRejectsFrontendRouteCollisions(t *testing.T) {
 	}
 }
 
+func TestValidateDefaultRouteRequiresPublishedLeafRoute(t *testing.T) {
+	t.Parallel()
+
+	menus := []Menu{
+		{ID: "settings", Code: "settings", Type: "directory", Route: "settings", Status: "active"},
+		{ID: "plans", ParentID: "settings", Code: "plans", Type: "page", Route: "plans", Status: "active"},
+		{ID: "legacy", Code: "legacy", Type: "page", Route: "legacy", Status: "disabled"},
+	}
+	for _, test := range []struct {
+		name         string
+		defaultRoute string
+		want         int
+	}{
+		{name: "empty fallback"},
+		{name: "relative leaf", defaultRoute: "plans"},
+		{name: "absolute leaf", defaultRoute: "/apps/billing-center/plans"},
+		{name: "workspace", defaultRoute: "/apps/billing-center/overview"},
+		{name: "directory parent", defaultRoute: "settings", want: apperror.CodeConflict},
+		{name: "inactive menu", defaultRoute: "legacy", want: apperror.CodeConflict},
+		{name: "unknown menu", defaultRoute: "missing", want: apperror.CodeConflict},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			application := Application{Code: "billing-center", DefaultRoute: test.defaultRoute}
+			if got := appErrorCode(validateDefaultRoute(application, menus)); got != test.want {
+				t.Fatalf("validateDefaultRoute() code = %d, want %d", got, test.want)
+			}
+		})
+	}
+}
+
 func TestValidExternalURL(t *testing.T) {
 	t.Parallel()
 

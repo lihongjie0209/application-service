@@ -218,6 +218,9 @@ func (s *Service) PublishMenus(ctx context.Context, appID string, appVersion int
 	if err = validateMenuRoutes(app.Code, menus); err != nil {
 		return MenuRelease{}, nil, err
 	}
+	if err = validateDefaultRoute(app, menus); err != nil {
+		return MenuRelease{}, nil, err
+	}
 	now := s.now()
 	release := MenuRelease{ID: uuid.NewString(), ApplicationID: appID, ReleaseNumber: app.PublishedRelease + 1, Status: "published", Comment: strings.TrimSpace(comment), Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: actor, UpdatedBy: actor}
 	err = s.transactor.Within(ctx, nil, func(tx *sqlx.Tx) error {
@@ -574,7 +577,7 @@ func validateMenuRoutes(applicationCode string, items []Menu) error {
 	scope := "/apps/" + normalizedRouteSegment(applicationCode)
 	seen := map[string]string{scope + "/overview": "__workspace__"}
 	for _, item := range items {
-		if (item.Status != "" && item.Status != "active") || item.Type == "action" {
+		if !isActiveRouteMenu(item) {
 			continue
 		}
 		path := normalizedMenuRoute(scope, item)
@@ -584,6 +587,42 @@ func validateMenuRoutes(applicationCode string, items []Menu) error {
 		seen[path] = item.Code
 	}
 	return nil
+}
+
+func validateDefaultRoute(application Application, items []Menu) error {
+	configured := strings.TrimSpace(application.DefaultRoute)
+	if configured == "" {
+		return nil
+	}
+
+	scope := "/apps/" + normalizedRouteSegment(application.Code)
+	candidate := scope + "/" + strings.TrimLeft(configured, "/")
+	if strings.HasPrefix(configured, scope+"/") {
+		candidate = configured
+	}
+	leafRoutes := map[string]struct{}{scope + "/overview": {}}
+	parents := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		if isActiveRouteMenu(item) && item.ParentID != "" {
+			parents[item.ParentID] = struct{}{}
+		}
+	}
+	for _, item := range items {
+		if !isActiveRouteMenu(item) {
+			continue
+		}
+		if _, hasChildren := parents[item.ID]; !hasChildren {
+			leafRoutes[normalizedMenuRoute(scope, item)] = struct{}{}
+		}
+	}
+	if _, exists := leafRoutes[candidate]; !exists {
+		return apperror.Conflict(fmt.Sprintf("default route %q is not an active leaf menu route", candidate), nil)
+	}
+	return nil
+}
+
+func isActiveRouteMenu(item Menu) bool {
+	return (item.Status == "" || item.Status == "active") && item.Type != "action"
 }
 
 func normalizedMenuRoute(scope string, item Menu) string {
