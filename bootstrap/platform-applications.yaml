@@ -105,7 +105,9 @@ applications:
     sort_order: 40
     menus:
       - {code: templates, name: 通知模板, route: templates, component: notification-center.templates, permission_code: notification.template.list, permission_scope: tenant, sort_order: 10}
+      - {code: templates.update, parent: templates, type: action, name: 保存通知模板, permission_code: notification.template.update, permission_scope: tenant, visible: false, sort_order: 11}
       - {code: deliveries, name: 投递记录, route: deliveries, component: notification-center.deliveries, permission_code: notification.delivery.list, permission_scope: tenant, sort_order: 20}
+      - {code: deliveries.send, parent: deliveries, type: action, name: 发送通知, permission_code: notification.delivery.send, permission_scope: tenant, visible: false, sort_order: 21}
 
   - code: file-center
     name: 文件中心
