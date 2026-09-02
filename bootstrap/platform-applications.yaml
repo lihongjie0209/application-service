@@ -81,6 +81,7 @@ applications:
     sort_order: 20
     menus:
       - {code: records, name: 审计记录, route: records, component: audit-center.records, permission_code: audit.record.query, permission_scope: tenant, sort_order: 10}
+      - {code: records.export, parent: records, type: action, name: 导出审计记录, permission_code: audit.record.export, permission_scope: tenant, visible: false, sort_order: 11}
 
   - code: config-center
     name: 配置中心
@@ -160,6 +161,7 @@ applications:
     sort_order: 80
     menus:
       - {code: services, name: 服务目录, route: services, component: registry-center.services, permission_code: service_registry.service.list, permission_scope: platform, sort_order: 10}
+      - {code: services.instances, parent: services, type: action, name: 查看服务实例, permission_code: service_registry.instance.list, permission_scope: platform, visible: false, sort_order: 11}
 
   - code: swagger-center
     name: API 文档中心
@@ -169,6 +171,7 @@ applications:
     sort_order: 90
     menus:
       - {code: documents, name: API 文档, route: documents, component: swagger-center.documents, permission_code: swagger.document.list, permission_scope: platform, sort_order: 10}
+      - {code: documents.read, parent: documents, type: action, name: 读取 API 文档, permission_code: swagger.document.read, permission_scope: platform, visible: false, sort_order: 11}
 
   - code: workflow-center
     name: 工作流中心
@@ -198,6 +201,7 @@ applications:
     sort_order: 110
     menus:
       - {code: search, name: 应用搜索, route: search, component: search-center.search, permission_code: search.document.search, permission_scope: tenant, sort_order: 10}
+      - {code: search.suggest, parent: search, type: action, name: 获取搜索建议, permission_code: search.document.suggest, permission_scope: tenant, visible: false, sort_order: 11}
 
   - code: metering-center
     name: 计量中心
