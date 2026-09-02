@@ -399,9 +399,13 @@ func TestNewEventEnvelopeCarriesApplicationScope(t *testing.T) {
 
 func TestValidateApplication(t *testing.T) {
 	for name, input := range map[string]ApplicationInput{
-		"bad code":     {Code: "Bad Code", Name: "App", MetadataJSON: "{}"},
-		"empty name":   {Code: "valid-app", MetadataJSON: "{}"},
-		"invalid json": {Code: "valid-app", Name: "App", MetadataJSON: "{"},
+		"bad code":           {Code: "Bad Code", Name: "App", MetadataJSON: "{}"},
+		"dot normalizes":     {Code: "valid.app", Name: "App", MetadataJSON: "{}"},
+		"underscore changes": {Code: "valid_app", Name: "App", MetadataJSON: "{}"},
+		"duplicate hyphens":  {Code: "valid--app", Name: "App", MetadataJSON: "{}"},
+		"trailing hyphen":    {Code: "valid-app-", Name: "App", MetadataJSON: "{}"},
+		"empty name":         {Code: "valid-app", MetadataJSON: "{}"},
+		"invalid json":       {Code: "valid-app", Name: "App", MetadataJSON: "{"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := validateApplication(input, true); err == nil {

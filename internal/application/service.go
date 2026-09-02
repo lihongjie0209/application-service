@@ -672,7 +672,7 @@ func newEventEnvelope(eventType, aggregateID, aggregateType, tenantID, applicati
 func validateApplication(in ApplicationInput, create bool) (ApplicationInput, error) {
 	in.Code = strings.ToLower(strings.TrimSpace(in.Code))
 	in.Name, in.Status, in.MetadataJSON = strings.TrimSpace(in.Name), strings.TrimSpace(in.Status), defaultJSON(in.MetadataJSON)
-	if create && !codePattern.MatchString(in.Code) {
+	if create && (!codePattern.MatchString(in.Code) || normalizedRouteSegment(in.Code) != in.Code) {
 		return in, apperror.Invalid("invalid application code", nil)
 	}
 	if in.Name == "" || !json.Valid([]byte(in.MetadataJSON)) {
