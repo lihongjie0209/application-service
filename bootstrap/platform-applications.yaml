@@ -117,6 +117,9 @@ applications:
     sort_order: 50
     menus:
       - {code: files, name: 文件管理, route: files, component: file-center.files, permission_code: file.object.list, permission_scope: tenant, sort_order: 10}
+      - {code: files.upload, parent: files, type: action, name: 上传文件, permission_code: file.object.upload, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: files.download, parent: files, type: action, name: 下载文件, permission_code: file.object.download, permission_scope: tenant, visible: false, sort_order: 12}
+      - {code: files.delete, parent: files, type: action, name: 删除文件, permission_code: file.object.delete, permission_scope: tenant, visible: false, sort_order: 13}
 
   - code: scheduler-center
     name: 调度中心
