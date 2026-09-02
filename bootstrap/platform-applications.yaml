@@ -55,15 +55,23 @@ applications:
       - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, permission_code: authorization.role.list, permission_scope: tenant, sort_order: 140}
       - {code: roles.create, parent: roles, type: action, name: 创建角色, permission_code: authorization.role.create, permission_scope: tenant, visible: false, sort_order: 141}
       - {code: roles.update, parent: roles, type: action, name: 编辑角色, permission_code: authorization.role.update, permission_scope: tenant, visible: false, sort_order: 142}
+      - {code: roles.platform-create, parent: roles, type: action, name: 创建平台角色, permission_code: authorization.role.create, permission_scope: platform, visible: false, sort_order: 143}
+      - {code: roles.platform-update, parent: roles, type: action, name: 编辑平台角色, permission_code: authorization.role.update, permission_scope: platform, visible: false, sort_order: 144}
       - {code: permissions, name: 权限管理, route: permissions, component: platform-admin.permissions, permission_code: authorization.permission.list, permission_scope: tenant, sort_order: 150}
       - {code: permissions.create, parent: permissions, type: action, name: 创建权限, permission_code: authorization.permission.create, permission_scope: tenant, visible: false, sort_order: 151}
       - {code: permissions.update, parent: permissions, type: action, name: 编辑权限, permission_code: authorization.permission.update, permission_scope: tenant, visible: false, sort_order: 152}
+      - {code: permissions.platform-create, parent: permissions, type: action, name: 创建平台权限, permission_code: authorization.permission.create, permission_scope: platform, visible: false, sort_order: 153}
+      - {code: permissions.platform-update, parent: permissions, type: action, name: 编辑平台权限, permission_code: authorization.permission.update, permission_scope: platform, visible: false, sort_order: 154}
       - {code: role-permissions, name: 角色权限, route: role-permissions, component: platform-admin.role-permissions, permission_code: authorization.role-permission.list, permission_scope: tenant, sort_order: 160}
       - {code: role-permissions.grant, parent: role-permissions, type: action, name: 授予角色权限, permission_code: authorization.role-permission.grant, permission_scope: tenant, visible: false, sort_order: 161}
       - {code: role-permissions.revoke, parent: role-permissions, type: action, name: 撤销角色权限, permission_code: authorization.role-permission.revoke, permission_scope: tenant, visible: false, sort_order: 162}
+      - {code: role-permissions.platform-grant, parent: role-permissions, type: action, name: 授予平台角色权限, permission_code: authorization.role-permission.grant, permission_scope: platform, visible: false, sort_order: 163}
+      - {code: role-permissions.platform-revoke, parent: role-permissions, type: action, name: 撤销平台角色权限, permission_code: authorization.role-permission.revoke, permission_scope: platform, visible: false, sort_order: 164}
       - {code: role-bindings, name: 角色绑定, route: role-bindings, component: platform-admin.role-bindings, permission_code: authorization.binding.list, permission_scope: tenant, sort_order: 170}
       - {code: role-bindings.create, parent: role-bindings, type: action, name: 创建角色绑定, permission_code: authorization.binding.create, permission_scope: tenant, visible: false, sort_order: 171}
       - {code: role-bindings.revoke, parent: role-bindings, type: action, name: 撤销角色绑定, permission_code: authorization.binding.revoke, permission_scope: tenant, visible: false, sort_order: 172}
+      - {code: role-bindings.platform-create, parent: role-bindings, type: action, name: 创建平台角色绑定, permission_code: authorization.binding.create, permission_scope: platform, visible: false, sort_order: 173}
+      - {code: role-bindings.platform-revoke, parent: role-bindings, type: action, name: 撤销平台角色绑定, permission_code: authorization.binding.revoke, permission_scope: platform, visible: false, sort_order: 174}
 
   - code: audit-center
     name: 审计中心
