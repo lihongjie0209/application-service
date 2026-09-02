@@ -120,9 +120,12 @@ func TestReconcilerApplyIsIdempotent(t *testing.T) {
 func TestManifestRejectsCrossApplicationPageAndCycles(t *testing.T) {
 	t.Parallel()
 	for name, manifest := range map[string]Manifest{
-		"cross namespace":          {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Component: "billing.list"}}}}},
-		"cycle":                    {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "a", Parent: "b", Name: "A"}, {Code: "b", Parent: "a", Name: "B"}}}}},
-		"invalid permission scope": {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Route: "list", Component: "orders.list", PermissionScope: "global"}}}}},
+		"cross namespace":           {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Component: "billing.list"}}}}},
+		"cycle":                     {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "a", Parent: "b", Name: "A"}, {Code: "b", Parent: "a", Name: "B"}}}}},
+		"invalid permission scope":  {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Route: "list", Component: "orders.list", PermissionScope: "global"}}}}},
+		"action without parent":     {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "create", Type: "action", Name: "Create", PermissionCode: "orders.create"}}}}},
+		"action with route":         {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Route: "list", Component: "orders.list"}, {Code: "create", Parent: "list", Type: "action", Name: "Create", Route: "create", PermissionCode: "orders.create"}}}}},
+		"action with action parent": {Applications: []ApplicationSpec{{Code: "orders", Name: "Orders", Menus: []MenuSpec{{Code: "list", Name: "List", Route: "list", Component: "orders.list"}, {Code: "create", Parent: "list", Type: "action", Name: "Create", PermissionCode: "orders.create"}, {Code: "approve", Parent: "create", Type: "action", Name: "Approve", PermissionCode: "orders.approve"}}}}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if err := manifest.Validate(); err == nil {

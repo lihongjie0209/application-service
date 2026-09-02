@@ -100,6 +100,13 @@ func (m Manifest) Validate() error {
 				if strings.TrimSpace(menu.ExternalURL) == "" {
 					return fmt.Errorf("application %q external menu %q requires external_url", application.Code, menu.Code)
 				}
+			case "action":
+				if strings.TrimSpace(menu.Parent) == "" || strings.TrimSpace(menu.PermissionCode) == "" {
+					return fmt.Errorf("application %q action menu %q requires parent and permission_code", application.Code, menu.Code)
+				}
+				if menu.Route != "" || menu.Component != "" || menu.ExternalURL != "" {
+					return fmt.Errorf("application %q action menu %q cannot define route, component, or external_url", application.Code, menu.Code)
+				}
 			default:
 				return fmt.Errorf("application %q menu %q has invalid type %q", application.Code, menu.Code, menuType)
 			}
@@ -117,8 +124,18 @@ func (m Manifest) Validate() error {
 		}
 		for _, menu := range application.Menus {
 			if menu.Parent != "" {
-				if _, exists := menus[menu.Parent]; !exists {
+				parent, exists := menus[menu.Parent]
+				if !exists {
 					return fmt.Errorf("application %q menu %q has unknown parent %q", application.Code, menu.Code, menu.Parent)
+				}
+				if strings.TrimSpace(menu.Type) == "action" {
+					parentType := strings.TrimSpace(parent.Type)
+					if parentType == "" {
+						parentType = "page"
+					}
+					if parentType != "page" {
+						return fmt.Errorf("application %q action menu %q requires a page parent", application.Code, menu.Code)
+					}
 				}
 			}
 		}

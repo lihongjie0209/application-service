@@ -501,6 +501,14 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 	if v.Type == "external" && !validExternalURL(v.ExternalURL) {
 		return Menu{}, apperror.Invalid("external menu requires an absolute HTTP(S) URL without user information", nil)
 	}
+	if v.Type == "action" {
+		if v.ParentID == "" || v.PermissionCode == "" {
+			return Menu{}, apperror.Invalid("action menu requires parent_id and permission_code", nil)
+		}
+		if v.Route != "" || v.Component != "" || v.ExternalURL != "" {
+			return Menu{}, apperror.Invalid("action menu cannot define route, component, or external_url", nil)
+		}
+	}
 	app, err := s.repository.GetApplication(ctx, v.ApplicationID)
 	if err != nil {
 		return Menu{}, translate(err)
@@ -513,10 +521,12 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 		return Menu{}, translate(err)
 	}
 	foundParent := v.ParentID == ""
+	validActionParent := v.Type != "action"
 	next := make([]Menu, 0, len(items)+1)
 	for _, item := range items {
 		if item.ID == v.ParentID {
 			foundParent = true
+			validActionParent = item.Type == "page"
 		}
 		if item.ID != v.ID {
 			next = append(next, item)
@@ -524,6 +534,9 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 	}
 	if !foundParent {
 		return Menu{}, apperror.Invalid("parent menu does not exist in application", nil)
+	}
+	if !validActionParent {
+		return Menu{}, apperror.Invalid("action menu requires a page parent", nil)
 	}
 	next = append(next, v)
 	if err := validateMenuTree(next); err != nil {

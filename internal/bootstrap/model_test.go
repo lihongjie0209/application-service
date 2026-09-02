@@ -15,6 +15,7 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 		t.Fatalf("applications = %d, want 17", len(manifest.Applications))
 	}
 	components := map[string]struct{}{}
+	actionPermissions := map[string]struct{}{}
 	platformManagementPages := map[string]bool{
 		"platform-admin.applications":       true,
 		"platform-admin.menus":              true,
@@ -26,6 +27,12 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	}
 	for _, application := range manifest.Applications {
 		for _, menu := range application.Menus {
+			if menu.Type == "action" {
+				if menu.Parent == "" || menu.PermissionCode == "" || visible(menu.Visible) {
+					t.Fatalf("action %q must be hidden and reference a parent permission", menu.Code)
+				}
+				actionPermissions[menu.PermissionCode] = struct{}{}
+			}
 			if menu.Component == "" {
 				continue
 			}
@@ -43,5 +50,8 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	}
 	if len(components) != 42 {
 		t.Fatalf("page components = %d, want 42", len(components))
+	}
+	if len(actionPermissions) != 8 {
+		t.Fatalf("action permissions = %d, want 8", len(actionPermissions))
 	}
 }

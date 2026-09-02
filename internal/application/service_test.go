@@ -309,14 +309,49 @@ func TestValidExternalURL(t *testing.T) {
 	}
 }
 
-type menuValidationRepository struct{ Repository }
+type menuValidationRepository struct {
+	Repository
+	menus []Menu
+}
 
 func (menuValidationRepository) GetApplication(context.Context, string) (Application, error) {
 	return Application{ID: "app-1", Code: "billing-center"}, nil
 }
 
-func (menuValidationRepository) ListDraftMenus(context.Context, string) ([]Menu, error) {
-	return nil, nil
+func (repository menuValidationRepository) ListDraftMenus(context.Context, string) ([]Menu, error) {
+	return repository.menus, nil
+}
+
+func TestValidateActionMenuRequiresParentPermissionAndNoRouteTarget(t *testing.T) {
+	t.Parallel()
+	service := &Service{repository: menuValidationRepository{menus: []Menu{
+		{ID: "page-1", ApplicationID: "app-1", Code: "plans", Type: "page"},
+		{ID: "action-1", ApplicationID: "app-1", ParentID: "page-1", Code: "plans.create", Type: "action"},
+	}}}
+	tests := []struct {
+		name     string
+		menu     Menu
+		wantCode int
+	}{
+		{name: "valid", menu: Menu{ParentID: "page-1", PermissionCode: "billing.plan.create"}},
+		{name: "missing parent", menu: Menu{PermissionCode: "billing.plan.create"}, wantCode: apperror.CodeInvalidArgument},
+		{name: "missing permission", menu: Menu{ParentID: "page-1"}, wantCode: apperror.CodeInvalidArgument},
+		{name: "route target", menu: Menu{ParentID: "page-1", PermissionCode: "billing.plan.create", Route: "create"}, wantCode: apperror.CodeInvalidArgument},
+		{name: "action parent", menu: Menu{ParentID: "action-1", PermissionCode: "billing.plan.create"}, wantCode: apperror.CodeInvalidArgument},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			test.menu.ApplicationID = "app-1"
+			test.menu.Code = "plans.create"
+			test.menu.Type = "action"
+			test.menu.Name = "Create plan"
+			_, err := service.validateMenu(t.Context(), test.menu, 0)
+			if got := appErrorCode(err); got != test.wantCode {
+				t.Fatalf("validateMenu() error = %#v, code %d, want %d", err, got, test.wantCode)
+			}
+		})
+	}
 }
 
 func TestValidateMenuRequiresApplicationComponentNamespace(t *testing.T) {
