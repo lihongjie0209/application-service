@@ -19,19 +19,51 @@ applications:
       - {code: application-grants.grant, parent: application-grants, type: action, name: 授权应用, permission_code: application.grant.grant, permission_scope: platform, visible: false, sort_order: 31}
       - {code: application-grants.revoke, parent: application-grants, type: action, name: 撤销应用授权, permission_code: application.grant.revoke, permission_scope: platform, visible: false, sort_order: 32}
       - {code: tenants, name: 租户管理, route: tenants, component: platform-admin.tenants, permission_code: tenant.profile.list, permission_scope: platform, sort_order: 40}
+      - {code: tenants.read, parent: tenants, type: action, name: 查看租户详情, permission_code: tenant.profile.read, permission_scope: platform, visible: false, sort_order: 41}
+      - {code: tenants.create, parent: tenants, type: action, name: 创建租户, permission_code: tenant.profile.create, permission_scope: platform, visible: false, sort_order: 42}
+      - {code: tenants.update, parent: tenants, type: action, name: 编辑租户, permission_code: tenant.profile.update, permission_scope: platform, visible: false, sort_order: 43}
       - {code: organization-units, name: 组织架构, route: organization-units, component: platform-admin.organization-units, permission_code: tenant.organization-unit.list, permission_scope: tenant, sort_order: 50}
+      - {code: organization-units.read, parent: organization-units, type: action, name: 查看组织节点, permission_code: tenant.organization-unit.read, permission_scope: tenant, visible: false, sort_order: 51}
+      - {code: organization-units.create, parent: organization-units, type: action, name: 创建组织节点, permission_code: tenant.organization-unit.create, permission_scope: tenant, visible: false, sort_order: 52}
+      - {code: organization-units.update, parent: organization-units, type: action, name: 编辑组织节点, permission_code: tenant.organization-unit.update, permission_scope: tenant, visible: false, sort_order: 53}
       - {code: memberships, name: 成员管理, route: memberships, component: platform-admin.memberships, permission_code: tenant.membership.list, permission_scope: tenant, sort_order: 60}
+      - {code: memberships.create, parent: memberships, type: action, name: 添加成员, permission_code: tenant.membership.create, permission_scope: tenant, visible: false, sort_order: 61}
+      - {code: memberships.update, parent: memberships, type: action, name: 编辑成员, permission_code: tenant.membership.update, permission_scope: tenant, visible: false, sort_order: 62}
       - {code: invitations, name: 邀请管理, route: invitations, component: platform-admin.invitations, permission_code: tenant.invitation.list, permission_scope: tenant, sort_order: 70}
+      - {code: invitations.create, parent: invitations, type: action, name: 创建邀请, permission_code: tenant.invitation.create, permission_scope: tenant, visible: false, sort_order: 71}
+      - {code: invitations.revoke, parent: invitations, type: action, name: 撤销邀请, permission_code: tenant.invitation.revoke, permission_scope: tenant, visible: false, sort_order: 72}
       - {code: groups, name: 用户组, route: groups, component: platform-admin.groups, permission_code: tenant.group.list, permission_scope: tenant, sort_order: 80}
+      - {code: groups.create, parent: groups, type: action, name: 创建用户组, permission_code: tenant.group.create, permission_scope: tenant, visible: false, sort_order: 81}
+      - {code: groups.update, parent: groups, type: action, name: 编辑用户组, permission_code: tenant.group.update, permission_scope: tenant, visible: false, sort_order: 82}
       - {code: group-members, name: 用户组成员, route: group-members, component: platform-admin.group-members, permission_code: tenant.group.list-members, permission_scope: tenant, sort_order: 90}
+      - {code: group-members.add, parent: group-members, type: action, name: 添加组成员, permission_code: tenant.group.add-member, permission_scope: tenant, visible: false, sort_order: 91}
+      - {code: group-members.remove, parent: group-members, type: action, name: 移除组成员, permission_code: tenant.group.remove-member, permission_scope: tenant, visible: false, sort_order: 92}
       - {code: quotas, name: 租户配额, route: quotas, component: platform-admin.quotas, permission_code: tenant.quota.list, permission_scope: tenant, sort_order: 100}
+      - {code: quotas.read, parent: quotas, type: action, name: 查看配额详情, permission_code: tenant.quota.read, permission_scope: tenant, visible: false, sort_order: 101}
+      - {code: quotas.update, parent: quotas, type: action, name: 设置配额, permission_code: tenant.quota.update, permission_scope: tenant, visible: false, sort_order: 102}
+      - {code: quotas.consume, parent: quotas, type: action, name: 消耗配额, permission_code: tenant.quota.consume, permission_scope: tenant, visible: false, sort_order: 103}
       - {code: users, name: 用户管理, route: users, component: platform-admin.users, permission_code: identity.user.list, permission_scope: platform, sort_order: 110}
+      - {code: users.create, parent: users, type: action, name: 创建用户, permission_code: identity.user.create, permission_scope: platform, visible: false, sort_order: 111}
+      - {code: users.update-status, parent: users, type: action, name: 更新用户状态, permission_code: identity.user.update-status, permission_scope: platform, visible: false, sort_order: 112}
+      - {code: users.password-reset, parent: users, type: action, name: 签发密码重置, permission_code: identity.user.password-reset, permission_scope: platform, visible: false, sort_order: 113}
+      - {code: users.mfa-reset, parent: users, type: action, name: 重置用户 MFA, permission_code: identity.user.mfa-reset, permission_scope: platform, visible: false, sort_order: 114}
       - {code: service-accounts, name: 服务账号, route: service-accounts, component: platform-admin.service-accounts, permission_code: identity.service-account.list, permission_scope: platform, sort_order: 120}
+      - {code: service-accounts.create, parent: service-accounts, type: action, name: 创建服务账号, permission_code: identity.service-account.create, permission_scope: platform, visible: false, sort_order: 121}
+      - {code: service-accounts.update-status, parent: service-accounts, type: action, name: 更新服务账号状态, permission_code: identity.service-account.update-status, permission_scope: platform, visible: false, sort_order: 122}
       - {code: sessions, name: 会话管理, route: sessions, component: platform-admin.sessions, permission_code: identity.session.list, permission_scope: platform, sort_order: 130}
+      - {code: sessions.revoke, parent: sessions, type: action, name: 撤销会话, permission_code: identity.session.revoke, permission_scope: platform, visible: false, sort_order: 131}
       - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, permission_code: authorization.role.list, permission_scope: tenant, sort_order: 140}
+      - {code: roles.create, parent: roles, type: action, name: 创建角色, permission_code: authorization.role.create, permission_scope: tenant, visible: false, sort_order: 141}
+      - {code: roles.update, parent: roles, type: action, name: 编辑角色, permission_code: authorization.role.update, permission_scope: tenant, visible: false, sort_order: 142}
       - {code: permissions, name: 权限管理, route: permissions, component: platform-admin.permissions, permission_code: authorization.permission.list, permission_scope: tenant, sort_order: 150}
+      - {code: permissions.create, parent: permissions, type: action, name: 创建权限, permission_code: authorization.permission.create, permission_scope: tenant, visible: false, sort_order: 151}
+      - {code: permissions.update, parent: permissions, type: action, name: 编辑权限, permission_code: authorization.permission.update, permission_scope: tenant, visible: false, sort_order: 152}
       - {code: role-permissions, name: 角色权限, route: role-permissions, component: platform-admin.role-permissions, permission_code: authorization.role-permission.list, permission_scope: tenant, sort_order: 160}
+      - {code: role-permissions.grant, parent: role-permissions, type: action, name: 授予角色权限, permission_code: authorization.role-permission.grant, permission_scope: tenant, visible: false, sort_order: 161}
+      - {code: role-permissions.revoke, parent: role-permissions, type: action, name: 撤销角色权限, permission_code: authorization.role-permission.revoke, permission_scope: tenant, visible: false, sort_order: 162}
       - {code: role-bindings, name: 角色绑定, route: role-bindings, component: platform-admin.role-bindings, permission_code: authorization.binding.list, permission_scope: tenant, sort_order: 170}
+      - {code: role-bindings.create, parent: role-bindings, type: action, name: 创建角色绑定, permission_code: authorization.binding.create, permission_scope: tenant, visible: false, sort_order: 171}
+      - {code: role-bindings.revoke, parent: role-bindings, type: action, name: 撤销角色绑定, permission_code: authorization.binding.revoke, permission_scope: tenant, visible: false, sort_order: 172}
 
   - code: audit-center
     name: 审计中心
