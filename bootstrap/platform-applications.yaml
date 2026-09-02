@@ -39,9 +39,7 @@ applications:
       - {code: group-members.add, parent: group-members, type: action, name: 添加组成员, permission_code: tenant.group.add-member, permission_scope: tenant, visible: false, sort_order: 91}
       - {code: group-members.remove, parent: group-members, type: action, name: 移除组成员, permission_code: tenant.group.remove-member, permission_scope: tenant, visible: false, sort_order: 92}
       - {code: quotas, name: 租户配额, route: quotas, component: platform-admin.quotas, permission_code: tenant.quota.list, permission_scope: tenant, sort_order: 100}
-      - {code: quotas.read, parent: quotas, type: action, name: 查看配额详情, permission_code: tenant.quota.read, permission_scope: tenant, visible: false, sort_order: 101}
       - {code: quotas.update, parent: quotas, type: action, name: 设置配额, permission_code: tenant.quota.update, permission_scope: tenant, visible: false, sort_order: 102}
-      - {code: quotas.consume, parent: quotas, type: action, name: 消耗配额, permission_code: tenant.quota.consume, permission_scope: tenant, visible: false, sort_order: 103}
       - {code: users, name: 用户管理, route: users, component: platform-admin.users, permission_code: identity.user.list, permission_scope: platform, sort_order: 110}
       - {code: users.create, parent: users, type: action, name: 创建用户, permission_code: identity.user.create, permission_scope: platform, visible: false, sort_order: 111}
       - {code: users.update-status, parent: users, type: action, name: 更新用户状态, permission_code: identity.user.update-status, permission_scope: platform, visible: false, sort_order: 112}
