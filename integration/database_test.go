@@ -73,7 +73,7 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			}
 			repository := applicationdomain.NewRepository(db)
 			now := time.Now().Truncate(time.Microsecond)
-			application := applicationdomain.Application{ID: "app-1", Code: "orders", Name: "Orders", Status: "active", MetadataJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
+			application := applicationdomain.Application{ID: "app-1", Code: "orders", Name: "Orders", SortOrder: 20, Status: "active", MetadataJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
 			if err := repository.CreateApplication(ctx, db, application); err != nil {
 				t.Fatal(err)
 			}
@@ -95,6 +95,24 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			grant := applicationdomain.Grant{ID: "grant-1", TenantID: "tenant-1", ApplicationID: application.ID, Status: "active", ValidFrom: now, Source: "manual", EntitlementsJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
 			if err := repository.CreateGrant(ctx, db, grant); err != nil {
 				t.Fatal(err)
+			}
+			prioritizedApplication := applicationdomain.Application{ID: "app-2", Code: "accounts", Name: "Accounts", SortOrder: 10, Status: "active", MetadataJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
+			if err := repository.CreateApplication(ctx, db, prioritizedApplication); err != nil {
+				t.Fatal(err)
+			}
+			prioritizedGrant := applicationdomain.Grant{ID: "grant-2", TenantID: grant.TenantID, ApplicationID: prioritizedApplication.ID, Status: "active", ValidFrom: now, Source: "manual", EntitlementsJSON: "{}", Version: 1, CreatedAt: now.Add(-time.Second), UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
+			if err := repository.CreateGrant(ctx, db, prioritizedGrant); err != nil {
+				t.Fatal(err)
+			}
+			grants, applications, total, err := repository.ListGrants(ctx, grant.TenantID, true, now.Add(time.Second), 100, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if total != 2 || len(grants) != 2 || len(applications) != 2 {
+				t.Fatalf("unexpected grant page total=%d grants=%d applications=%d", total, len(grants), len(applications))
+			}
+			if grants[0].ApplicationID != prioritizedApplication.ID || applications[0].ID != prioritizedApplication.ID {
+				t.Fatalf("tenant applications are not ordered by application sort order: grants=%v applications=%v", grants, applications)
 			}
 			active, err := repository.BatchActiveGrants(ctx, grant.TenantID, []string{application.ID, "missing"}, now.Add(time.Second))
 			if err != nil || !active[application.ID] || active["missing"] {

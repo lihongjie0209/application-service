@@ -157,7 +157,7 @@ func (r *SQLRepository) ListGrants(ctx context.Context, tenantID string, active 
 	}
 	args = append(args, limit, offset)
 	grants := []Grant{}
-	if err := r.db.SelectContext(ctx, &grants, r.db.Rebind(`SELECT g.`+strings.ReplaceAll(grantColumns, `,`, `,g.`)+` FROM tenant_application_grants g WHERE `+where+` ORDER BY g.created_at DESC LIMIT ? OFFSET ?`), args...); err != nil {
+	if err := r.db.SelectContext(ctx, &grants, r.db.Rebind(`SELECT g.`+strings.ReplaceAll(grantColumns, `,`, `,g.`)+` FROM tenant_application_grants g JOIN applications a ON a.id=g.application_id WHERE `+where+` ORDER BY a.sort_order,a.id LIMIT ? OFFSET ?`), args...); err != nil {
 		return nil, nil, 0, err
 	}
 	if len(grants) == 0 {
