@@ -207,6 +207,8 @@ applications:
     sort_order: 120
     menus:
       - {code: meters, name: 计量器, route: meters, component: metering-center.meters, permission_code: metering.meter.list, permission_scope: platform, sort_order: 10}
+      - {code: meters.create, parent: meters, type: action, name: 创建计量器, permission_code: metering.meter.create, permission_scope: platform, visible: false, sort_order: 11}
+      - {code: meters.update, parent: meters, type: action, name: 编辑计量器, permission_code: metering.meter.update, permission_scope: platform, visible: false, sort_order: 12}
       - {code: usage, name: 用量查询, route: usage, component: metering-center.usage, permission_code: metering.usage.query, permission_scope: tenant, sort_order: 20}
 
   - code: billing-center
