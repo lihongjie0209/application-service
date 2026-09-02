@@ -42,9 +42,10 @@ applications:
       - {code: quotas.update, parent: quotas, type: action, name: 设置配额, permission_code: tenant.quota.update, permission_scope: tenant, visible: false, sort_order: 102}
       - {code: users, name: 用户管理, route: users, component: platform-admin.users, permission_code: identity.user.list, permission_scope: platform, sort_order: 110}
       - {code: users.create, parent: users, type: action, name: 创建用户, permission_code: identity.user.create, permission_scope: platform, visible: false, sort_order: 111}
-      - {code: users.update-status, parent: users, type: action, name: 更新用户状态, permission_code: identity.user.update-status, permission_scope: platform, visible: false, sort_order: 112}
-      - {code: users.password-reset, parent: users, type: action, name: 签发密码重置, permission_code: identity.user.password-reset, permission_scope: platform, visible: false, sort_order: 113}
-      - {code: users.mfa-reset, parent: users, type: action, name: 重置用户 MFA, permission_code: identity.user.mfa-reset, permission_scope: platform, visible: false, sort_order: 114}
+      - {code: users.update-profile, parent: users, type: action, name: 编辑用户资料, permission_code: identity.user.update-profile, permission_scope: platform, visible: false, sort_order: 112}
+      - {code: users.update-status, parent: users, type: action, name: 更新用户状态, permission_code: identity.user.update-status, permission_scope: platform, visible: false, sort_order: 113}
+      - {code: users.password-reset, parent: users, type: action, name: 签发密码重置, permission_code: identity.user.password-reset, permission_scope: platform, visible: false, sort_order: 114}
+      - {code: users.mfa-reset, parent: users, type: action, name: 重置用户 MFA, permission_code: identity.user.mfa-reset, permission_scope: platform, visible: false, sort_order: 115}
       - {code: service-accounts, name: 服务账号, route: service-accounts, component: platform-admin.service-accounts, permission_code: identity.service-account.list, permission_scope: platform, sort_order: 120}
       - {code: service-accounts.create, parent: service-accounts, type: action, name: 创建服务账号, permission_code: identity.service-account.create, permission_scope: platform, visible: false, sort_order: 121}
       - {code: service-accounts.update-status, parent: service-accounts, type: action, name: 更新服务账号状态, permission_code: identity.service-account.update-status, permission_scope: platform, visible: false, sort_order: 122}

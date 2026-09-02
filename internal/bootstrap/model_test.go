@@ -53,11 +53,14 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	if len(components) != 42 {
 		t.Fatalf("page components = %d, want 42", len(components))
 	}
-	if len(actionPermissions) != 116 {
-		t.Fatalf("action permissions = %d, want 116", len(actionPermissions))
+	if len(actionPermissions) != 117 {
+		t.Fatalf("action permissions = %d, want 117", len(actionPermissions))
 	}
-	if actionCount != 124 {
-		t.Fatalf("action nodes = %d, want 124", actionCount)
+	if actionCount != 125 {
+		t.Fatalf("action nodes = %d, want 125", actionCount)
+	}
+	if _, exists := actionPermissions["identity.user.update-profile"]; !exists {
+		t.Fatal("user profile update permission is missing")
 	}
 	if _, exists := actionPermissions["identity.service-account.rotate-secret"]; !exists {
 		t.Fatal("service account secret rotation permission is missing")
