@@ -47,6 +47,22 @@ rate_limit:
   enabled: true
 idempotency:
   enabled: true
+  http_paths:
+    - /api/v1/applications/create
+    - /api/v1/applications/update
+    - /api/v1/applications/menus/upsert
+    - /api/v1/applications/menus/delete
+    - /api/v1/applications/menus/publish
+    - /api/v1/applications/tenant-grants/grant
+    - /api/v1/applications/tenant-grants/revoke
+  grpc_methods:
+    - /platform.application.v1.ApplicationService/CreateApplication
+    - /platform.application.v1.ApplicationService/UpdateApplication
+    - /platform.application.v1.ApplicationService/UpsertMenu
+    - /platform.application.v1.ApplicationService/DeleteMenu
+    - /platform.application.v1.ApplicationService/PublishMenus
+    - /platform.application.v1.ApplicationService/GrantTenantApplication
+    - /platform.application.v1.ApplicationService/RevokeTenantApplication
 event_bus:
   enabled: true
   urls: []
