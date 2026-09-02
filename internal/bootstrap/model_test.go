@@ -53,10 +53,10 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	if len(components) != 42 {
 		t.Fatalf("page components = %d, want 42", len(components))
 	}
-	if len(actionPermissions) != 63 {
-		t.Fatalf("action permissions = %d, want 63", len(actionPermissions))
+	if len(actionPermissions) != 72 {
+		t.Fatalf("action permissions = %d, want 72", len(actionPermissions))
 	}
-	if actionCount != 71 {
-		t.Fatalf("action nodes = %d, want 71", actionCount)
+	if actionCount != 80 {
+		t.Fatalf("action nodes = %d, want 80", actionCount)
 	}
 }
