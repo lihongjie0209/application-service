@@ -24,8 +24,8 @@ func TestLoad_EnvironmentOverridesFile(t *testing.T) {
 	}
 }
 
-func TestLoad_EnvironmentOverridesStringSlice(t *testing.T) {
-	t.Setenv("APP_AUTH_PSK_GRPC_METHODS", "/platform.application.v1.ApplicationService/BatchCheckTenantApplications,/platform.application.v1.ApplicationService/GetApplication")
+func TestLoad_EnvironmentStringSlicesAcceptBracketedLists(t *testing.T) {
+	t.Setenv("APP_AUTH_PSK_GRPC_METHODS", "[/platform.application.v1.ApplicationService/BatchCheckTenantApplications, /platform.application.v1.ApplicationService/GetApplication]")
 	cfg, err := Load("../../config/config.yaml")
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
