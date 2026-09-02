@@ -257,6 +257,15 @@ applications:
     sort_order: 150
     menus:
       - {code: jobs, name: 导入任务, route: jobs, component: import-center.jobs, permission_code: import.job.list, permission_scope: tenant, sort_order: 10}
+      - {code: jobs.datasets, parent: jobs, type: action, name: 搜索导入数据集, permission_code: import.dataset.list, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: jobs.dataset-read, parent: jobs, type: action, name: 查看导入数据集规范, permission_code: import.dataset.read, permission_scope: tenant, visible: false, sort_order: 12}
+      - {code: jobs.create, parent: jobs, type: action, name: 创建导入任务, permission_code: import.job.create, permission_scope: tenant, visible: false, sort_order: 13}
+      - {code: jobs.upload, parent: jobs, type: action, name: 上传导入文件, permission_code: import.job.upload, permission_scope: tenant, visible: false, sort_order: 14}
+      - {code: jobs.read, parent: jobs, type: action, name: 查看导入任务详情, permission_code: import.job.read, permission_scope: tenant, visible: false, sort_order: 15}
+      - {code: jobs.confirm, parent: jobs, type: action, name: 确认导入任务, permission_code: import.job.confirm, permission_scope: tenant, visible: false, sort_order: 16}
+      - {code: jobs.cancel, parent: jobs, type: action, name: 取消导入任务, permission_code: import.job.cancel, permission_scope: tenant, visible: false, sort_order: 17}
+      - {code: jobs.retry, parent: jobs, type: action, name: 重试导入任务, permission_code: import.job.retry, permission_scope: tenant, visible: false, sort_order: 18}
+      - {code: jobs.error-report, parent: jobs, type: action, name: 下载导入错误报告, permission_code: import.job.download-error, permission_scope: tenant, visible: false, sort_order: 19}
 
   - code: export-center
     name: 数据导出
@@ -266,6 +275,13 @@ applications:
     sort_order: 160
     menus:
       - {code: jobs, name: 导出任务, route: jobs, component: export-center.jobs, permission_code: export.job.list, permission_scope: tenant, sort_order: 10}
+      - {code: jobs.datasets, parent: jobs, type: action, name: 搜索导出数据集, permission_code: export.dataset.list, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: jobs.dataset-read, parent: jobs, type: action, name: 查看导出数据集规范, permission_code: export.dataset.read, permission_scope: tenant, visible: false, sort_order: 12}
+      - {code: jobs.create, parent: jobs, type: action, name: 创建导出任务, permission_code: export.job.create, permission_scope: tenant, visible: false, sort_order: 13}
+      - {code: jobs.read, parent: jobs, type: action, name: 查看导出任务详情, permission_code: export.job.read, permission_scope: tenant, visible: false, sort_order: 14}
+      - {code: jobs.cancel, parent: jobs, type: action, name: 取消导出任务, permission_code: export.job.cancel, permission_scope: tenant, visible: false, sort_order: 15}
+      - {code: jobs.retry, parent: jobs, type: action, name: 重试导出任务, permission_code: export.job.retry, permission_scope: tenant, visible: false, sort_order: 16}
+      - {code: jobs.download, parent: jobs, type: action, name: 下载导出文件, permission_code: export.job.download, permission_scope: tenant, visible: false, sort_order: 17}
 
   - code: webhook-center
     name: Webhook 中心
