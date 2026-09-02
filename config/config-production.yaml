@@ -21,6 +21,10 @@ auth:
   jwks_url: ""
   issuer: identity-service
   audience: application-service
+  psk:
+    enabled: true
+    key: ""
+    grpc_methods: [/platform.application.v1.ApplicationService/BatchCheckTenantApplications]
 authorization:
   enabled: true
 outbound:
