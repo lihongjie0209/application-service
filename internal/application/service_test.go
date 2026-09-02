@@ -190,6 +190,61 @@ func TestValidateMenuTree(t *testing.T) {
 	})
 }
 
+func TestValidateMenuRoutesRejectsFrontendRouteCollisions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		menus []Menu
+		want  int
+	}{
+		{
+			name: "different routes",
+			menus: []Menu{
+				{Code: "plans", Type: "page", Route: "plans", Status: "active"},
+				{Code: "invoices", Type: "page", Route: "invoices", Status: "active"},
+			},
+		},
+		{
+			name: "relative and scoped absolute collision",
+			menus: []Menu{
+				{Code: "plans", Type: "page", Route: "plans", Status: "active"},
+				{Code: "legacy-plans", Type: "page", Route: "/apps/billing-center/plans", Status: "active"},
+			},
+			want: apperror.CodeConflict,
+		},
+		{
+			name:  "workspace collision",
+			menus: []Menu{{Code: "overview", Type: "page", Route: "overview", Status: "active"}},
+			want:  apperror.CodeConflict,
+		},
+		{
+			name: "inactive route ignored",
+			menus: []Menu{
+				{Code: "plans", Type: "page", Route: "plans", Status: "active"},
+				{Code: "old-plans", Type: "page", Route: "plans", Status: "disabled"},
+			},
+		},
+		{
+			name: "empty draft status treated as active",
+			menus: []Menu{
+				{Code: "plans", Type: "page", Route: "plans", Status: "active"},
+				{Code: "new-plans", Type: "page", Route: "plans"},
+			},
+			want: apperror.CodeConflict,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if got := appErrorCode(validateMenuRoutes("billing-center", test.menus)); got != test.want {
+				t.Fatalf("validateMenuRoutes() code = %d, want %d", got, test.want)
+			}
+		})
+	}
+}
+
 func TestValidExternalURL(t *testing.T) {
 	t.Parallel()
 

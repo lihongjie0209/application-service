@@ -51,6 +51,7 @@ func NewService(repository Repository, transactor *database.Transactor, locker *
 
 var codePattern = regexp.MustCompile(`^[a-z][a-z0-9._-]{1,127}$`)
 var componentSuffixPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,127}(?:\.[a-z][a-z0-9_-]{0,127})*$`)
+var routeSegmentPattern = regexp.MustCompile(`[^a-z0-9]+`)
 
 func (s *Service) CreateApplication(ctx context.Context, in ApplicationInput) (Application, error) {
 	actor, err := actor(ctx)
@@ -212,6 +213,9 @@ func (s *Service) PublishMenus(ctx context.Context, appID string, appVersion int
 		return MenuRelease{}, nil, apperror.Conflict("at least one menu is required", nil)
 	}
 	if err = validateMenuTree(menus); err != nil {
+		return MenuRelease{}, nil, err
+	}
+	if err = validateMenuRoutes(app.Code, menus); err != nil {
 		return MenuRelease{}, nil, err
 	}
 	now := s.now()
@@ -522,6 +526,9 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 	if err := validateMenuTree(next); err != nil {
 		return Menu{}, err
 	}
+	if err := validateMenuRoutes(app.Code, next); err != nil {
+		return Menu{}, err
+	}
 	return v, nil
 }
 
@@ -561,6 +568,42 @@ func validateMenuTree(items []Menu) error {
 		}
 	}
 	return nil
+}
+
+func validateMenuRoutes(applicationCode string, items []Menu) error {
+	scope := "/apps/" + normalizedRouteSegment(applicationCode)
+	seen := map[string]string{scope + "/overview": "__workspace__"}
+	for _, item := range items {
+		if (item.Status != "" && item.Status != "active") || item.Type == "action" {
+			continue
+		}
+		path := normalizedMenuRoute(scope, item)
+		if previous, exists := seen[path]; exists {
+			return apperror.Conflict(fmt.Sprintf("menu route %q conflicts with %q", path, previous), nil)
+		}
+		seen[path] = item.Code
+	}
+	return nil
+}
+
+func normalizedMenuRoute(scope string, item Menu) string {
+	configured := strings.TrimSpace(item.Route)
+	if configured == "" {
+		return scope + "/" + normalizedRouteSegment(item.Code)
+	}
+	if configured == scope || strings.HasPrefix(configured, scope+"/") {
+		return configured
+	}
+	return scope + "/" + strings.TrimLeft(configured, "/")
+}
+
+func normalizedRouteSegment(value string) string {
+	normalized := routeSegmentPattern.ReplaceAllString(strings.ToLower(strings.TrimSpace(value)), "-")
+	normalized = strings.Trim(normalized, "-")
+	if normalized == "" {
+		return "menu"
+	}
+	return normalized
 }
 func (s *Service) addEvent(ctx context.Context, tx *sqlx.Tx, subject, eventType, aggregateID, aggregateType, tenantID, applicationID, actor string, at time.Time, payload proto.Message) error {
 	envelope, err := newEventEnvelope(eventType, aggregateID, aggregateType, tenantID, applicationID, actor, at, payload)
