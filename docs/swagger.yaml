@@ -1,6 +1,35 @@
 basePath: /
 definitions:
-  application.Application:
+  buildinfo.Info:
+    properties:
+      build_time:
+        type: string
+      commit:
+        type: string
+      started_at:
+        type: string
+      uptime:
+        type: string
+      version:
+        type: string
+    type: object
+  health.Dependency:
+    properties:
+      latency:
+        type: string
+      status:
+        type: string
+    type: object
+  health.Status:
+    properties:
+      dependencies:
+        additionalProperties:
+          $ref: '#/definitions/health.Dependency'
+        type: object
+      status:
+        type: string
+    type: object
+  httptransport.ApplicationBody:
     properties:
       code:
         type: string
@@ -33,140 +62,25 @@ definitions:
       version:
         type: integer
     type: object
-  application.Grant:
-    properties:
-      application_id:
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      entitlements_json:
-        type: string
-      id:
-        type: string
-      source:
-        type: string
-      status:
-        type: string
-      tenant_id:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      valid_from:
-        type: string
-      valid_until:
-        type: string
-      version:
-        type: integer
-    type: object
-  application.Menu:
-    properties:
-      application_id:
-        type: string
-      code:
-        type: string
-      component:
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      external_url:
-        type: string
-      i18n_key:
-        type: string
-      icon:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      parent_id:
-        type: string
-      permission_code:
-        type: string
-      permission_scope:
-        type: string
-      release_number:
-        type: integer
-      route:
-        type: string
-      sort_order:
-        type: integer
-      status:
-        type: string
-      type:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      version:
-        type: integer
-      visible:
-        type: boolean
-    type: object
-  application.MenuRelease:
-    properties:
-      application_id:
-        type: string
-      comment:
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      id:
-        type: string
-      release_number:
-        type: integer
-      status:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      version:
-        type: integer
-    type: object
-  buildinfo.Info:
-    properties:
-      build_time:
-        type: string
-      commit:
-        type: string
-      started_at:
-        type: string
-      uptime:
-        type: string
-      version:
-        type: string
-    type: object
-  health.Dependency:
-    properties:
-      latency:
-        type: string
-      status:
-        type: string
-    type: object
-  health.Status:
-    properties:
-      dependencies:
-        additionalProperties:
-          $ref: '#/definitions/health.Dependency'
-        type: object
-      status:
-        type: string
-    type: object
   httptransport.ApplicationIDRequest:
     properties:
       application_id:
         type: string
     required:
     - application_id
+    type: object
+  httptransport.ApplicationPageBody:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/httptransport.ApplicationBody'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
     type: object
   httptransport.BatchCheckRequest:
     properties:
@@ -228,11 +142,40 @@ definitions:
     - id
     - version
     type: object
-  httptransport.GrantPage:
+  httptransport.GrantBody:
+    properties:
+      application_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      entitlements_json:
+        type: string
+      id:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      tenant_id:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+      valid_from:
+        type: string
+      valid_until:
+        type: string
+      version:
+        type: integer
+    type: object
+  httptransport.GrantPageBody:
     properties:
       items:
         items:
-          $ref: '#/definitions/application.Grant'
+          $ref: '#/definitions/httptransport.GrantBody'
         type: array
       page:
         type: integer
@@ -295,16 +238,124 @@ definitions:
       subject:
         type: string
     type: object
+  httptransport.MenuBody:
+    properties:
+      application_id:
+        type: string
+      code:
+        type: string
+      component:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      external_url:
+        type: string
+      i18n_key:
+        type: string
+      icon:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+      permission_code:
+        type: string
+      permission_scope:
+        type: string
+      release_number:
+        type: integer
+      route:
+        type: string
+      sort_order:
+        type: integer
+      status:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+      version:
+        type: integer
+      visible:
+        type: boolean
+    type: object
+  httptransport.MenuInputBody:
+    properties:
+      application_id:
+        type: string
+      code:
+        type: string
+      component:
+        type: string
+      external_url:
+        type: string
+      i18n_key:
+        type: string
+      icon:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+      permission_code:
+        type: string
+      permission_scope:
+        type: string
+      route:
+        type: string
+      sort_order:
+        type: integer
+      type:
+        type: string
+      visible:
+        type: boolean
+    required:
+    - application_id
+    - code
+    - name
+    - type
+    type: object
+  httptransport.MenuReleaseBody:
+    properties:
+      application_id:
+        type: string
+      comment:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      release_number:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+      version:
+        type: integer
+    type: object
   httptransport.NavigationResponse:
     properties:
       application:
-        $ref: '#/definitions/application.Application'
+        $ref: '#/definitions/httptransport.ApplicationBody'
       menus:
         items:
-          $ref: '#/definitions/application.Menu'
+          $ref: '#/definitions/httptransport.MenuBody'
         type: array
       release:
-        $ref: '#/definitions/application.MenuRelease'
+        $ref: '#/definitions/httptransport.MenuReleaseBody'
     type: object
   httptransport.PublishMenusRequest:
     properties:
@@ -322,10 +373,10 @@ definitions:
     properties:
       menus:
         items:
-          $ref: '#/definitions/application.Menu'
+          $ref: '#/definitions/httptransport.MenuBody'
         type: array
       release:
-        $ref: '#/definitions/application.MenuRelease'
+        $ref: '#/definitions/httptransport.MenuReleaseBody'
     type: object
   httptransport.Response:
     properties:
@@ -354,10 +405,10 @@ definitions:
     properties:
       applications:
         items:
-          $ref: '#/definitions/application.Application'
+          $ref: '#/definitions/httptransport.ApplicationBody'
         type: array
       grants:
-        $ref: '#/definitions/httptransport.GrantPage'
+        $ref: '#/definitions/httptransport.GrantPageBody'
     type: object
   httptransport.UpdateApplicationRequest:
     properties:
@@ -390,7 +441,7 @@ definitions:
       expected_version:
         type: integer
       menu:
-        $ref: '#/definitions/application.Menu'
+        $ref: '#/definitions/httptransport.MenuInputBody'
     required:
     - menu
     type: object
@@ -423,7 +474,7 @@ paths:
             - $ref: '#/definitions/httptransport.Response'
             - properties:
                 body:
-                  $ref: '#/definitions/application.Application'
+                  $ref: '#/definitions/httptransport.ApplicationBody'
               type: object
       security:
       - Bearer: []
@@ -451,7 +502,7 @@ paths:
             - $ref: '#/definitions/httptransport.Response'
             - properties:
                 body:
-                  $ref: '#/definitions/application.Application'
+                  $ref: '#/definitions/httptransport.ApplicationBody'
               type: object
       security:
       - Bearer: []
@@ -475,7 +526,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httptransport.Response'
+            allOf:
+            - $ref: '#/definitions/httptransport.Response'
+            - properties:
+                body:
+                  $ref: '#/definitions/httptransport.ApplicationPageBody'
+              type: object
       security:
       - Bearer: []
       summary: List applications
@@ -580,7 +636,7 @@ paths:
             - $ref: '#/definitions/httptransport.Response'
             - properties:
                 body:
-                  $ref: '#/definitions/application.Menu'
+                  $ref: '#/definitions/httptransport.MenuBody'
               type: object
       security:
       - Bearer: []
@@ -687,7 +743,7 @@ paths:
             - $ref: '#/definitions/httptransport.Response'
             - properties:
                 body:
-                  $ref: '#/definitions/application.Grant'
+                  $ref: '#/definitions/httptransport.GrantBody'
               type: object
       security:
       - Bearer: []
@@ -771,7 +827,7 @@ paths:
             - $ref: '#/definitions/httptransport.Response'
             - properties:
                 body:
-                  $ref: '#/definitions/application.Grant'
+                  $ref: '#/definitions/httptransport.GrantBody'
               type: object
       security:
       - Bearer: []
@@ -799,7 +855,7 @@ paths:
             - $ref: '#/definitions/httptransport.Response'
             - properties:
                 body:
-                  $ref: '#/definitions/application.Application'
+                  $ref: '#/definitions/httptransport.ApplicationBody'
               type: object
         "409":
           description: 'Code 30009: version conflict'

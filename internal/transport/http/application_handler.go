@@ -41,8 +41,8 @@ type ListApplicationsRequest struct {
 	PageSize int    `json:"page_size"`
 }
 type UpsertMenuRequest struct {
-	Menu            application.Menu `json:"menu" binding:"required"`
-	ExpectedVersion int64            `json:"expected_version"`
+	Menu            MenuInputBody `json:"menu" binding:"required"`
+	ExpectedVersion int64         `json:"expected_version"`
 }
 type DeleteMenuRequest struct {
 	ID      string `json:"id" binding:"required"`
@@ -57,13 +57,13 @@ type PublishMenusRequest struct {
 	Comment            string `json:"comment"`
 }
 type PublishMenusResponse struct {
-	Release application.MenuRelease `json:"release"`
-	Menus   []application.Menu      `json:"menus"`
+	Release MenuReleaseBody `json:"release"`
+	Menus   []MenuBody      `json:"menus"`
 }
 type NavigationResponse struct {
-	Application application.Application `json:"application"`
-	Release     application.MenuRelease `json:"release"`
-	Menus       []application.Menu      `json:"menus"`
+	Application ApplicationBody `json:"application"`
+	Release     MenuReleaseBody `json:"release"`
+	Menus       []MenuBody      `json:"menus"`
 }
 type BatchNavigationRequest struct {
 	ApplicationIDs []string `json:"application_ids" binding:"required"`
@@ -92,14 +92,14 @@ type ListTenantApplicationsRequest struct {
 	PageSize   int    `json:"page_size"`
 }
 type TenantApplicationsResponse struct {
-	Grants       GrantPage                 `json:"grants"`
-	Applications []application.Application `json:"applications"`
+	Grants       GrantPageBody     `json:"grants"`
+	Applications []ApplicationBody `json:"applications"`
 }
-type GrantPage struct {
-	Items    []application.Grant `json:"items"`
-	Total    int64               `json:"total"`
-	Page     int                 `json:"page"`
-	PageSize int                 `json:"page_size"`
+type GrantPageBody struct {
+	Items    []GrantBody `json:"items"`
+	Total    int64       `json:"total"`
+	Page     int         `json:"page"`
+	PageSize int         `json:"page_size"`
 }
 type BatchCheckRequest struct {
 	TenantID       string    `json:"tenant_id" binding:"required"`
@@ -119,7 +119,7 @@ type Decision struct {
 // @Produce json
 // @Security Bearer
 // @Param request body CreateApplicationRequest true "Application"
-// @Success 200 {object} Response{body=application.Application}
+// @Success 200 {object} Response{body=ApplicationBody}
 // @Router /api/v1/applications/create [post]
 func (h *Handler) CreateApplication(c *gin.Context) {
 	var r CreateApplicationRequest
@@ -132,7 +132,7 @@ func (h *Handler) CreateApplication(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.CreateApplication(c.Request.Context(), application.ApplicationInput{Code: r.Code, Name: r.Name, Description: r.Description, Icon: r.Icon, DefaultRoute: r.DefaultRoute, SortOrder: r.SortOrder, MetadataJSON: metadata})
-	respond(c, h.logger, v, err)
+	respond(c, h.logger, applicationBody(v), err)
 }
 
 // UpdateApplication godoc
@@ -142,7 +142,7 @@ func (h *Handler) CreateApplication(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body UpdateApplicationRequest true "Application and version"
-// @Success 200 {object} Response{body=application.Application}
+// @Success 200 {object} Response{body=ApplicationBody}
 // @Failure 409 {object} Response "Code 30009: version conflict"
 // @Router /api/v1/applications/update [post]
 func (h *Handler) UpdateApplication(c *gin.Context) {
@@ -156,7 +156,7 @@ func (h *Handler) UpdateApplication(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.UpdateApplication(c.Request.Context(), r.ID, application.ApplicationInput{Name: r.Name, Description: r.Description, Icon: r.Icon, DefaultRoute: r.DefaultRoute, SortOrder: r.SortOrder, Status: r.Status, MetadataJSON: metadata}, r.Version)
-	respond(c, h.logger, v, err)
+	respond(c, h.logger, applicationBody(v), err)
 }
 
 // GetApplication godoc
@@ -166,7 +166,7 @@ func (h *Handler) UpdateApplication(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body IDRequest true "Application ID"
-// @Success 200 {object} Response{body=application.Application}
+// @Success 200 {object} Response{body=ApplicationBody}
 // @Router /api/v1/applications/get [post]
 func (h *Handler) GetApplication(c *gin.Context) {
 	var r IDRequest
@@ -174,7 +174,7 @@ func (h *Handler) GetApplication(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.GetApplication(c.Request.Context(), r.ID)
-	respond(c, h.logger, v, err)
+	respond(c, h.logger, applicationBody(v), err)
 }
 
 // ListApplications godoc
@@ -184,7 +184,7 @@ func (h *Handler) GetApplication(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body ListApplicationsRequest true "Filters and pagination"
-// @Success 200 {object} Response
+// @Success 200 {object} Response{body=ApplicationPageBody}
 // @Router /api/v1/applications/list [post]
 func (h *Handler) ListApplications(c *gin.Context) {
 	var r ListApplicationsRequest
@@ -192,7 +192,7 @@ func (h *Handler) ListApplications(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.ListApplications(c.Request.Context(), r.Status, r.Page, r.PageSize)
-	respond(c, h.logger, v, err)
+	respond(c, h.logger, applicationPageBody(v), err)
 }
 
 // UpsertMenu godoc
@@ -202,15 +202,15 @@ func (h *Handler) ListApplications(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body UpsertMenuRequest true "Menu and expected version"
-// @Success 200 {object} Response{body=application.Menu}
+// @Success 200 {object} Response{body=MenuBody}
 // @Router /api/v1/applications/menus/upsert [post]
 func (h *Handler) UpsertMenu(c *gin.Context) {
 	var r UpsertMenuRequest
 	if !bind(c, h.logger, &r) {
 		return
 	}
-	v, err := h.applications.UpsertMenu(c.Request.Context(), r.Menu, r.ExpectedVersion)
-	respond(c, h.logger, v, err)
+	v, err := h.applications.UpsertMenu(c.Request.Context(), r.Menu.applicationMenu(), r.ExpectedVersion)
+	respond(c, h.logger, menuBody(v), err)
 }
 
 // DeleteMenu godoc
@@ -246,7 +246,7 @@ func (h *Handler) ListMenuDraft(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.ListMenuDraft(c.Request.Context(), r.ApplicationID)
-	respond(c, h.logger, v, err)
+	respond(c, h.logger, menuBodies(v), err)
 }
 
 // PublishMenus godoc
@@ -265,7 +265,7 @@ func (h *Handler) PublishMenus(c *gin.Context) {
 		return
 	}
 	rel, menus, err := h.applications.PublishMenus(c.Request.Context(), r.ApplicationID, r.ApplicationVersion, r.Comment)
-	respond(c, h.logger, PublishMenusResponse{Release: rel, Menus: menus}, err)
+	respond(c, h.logger, PublishMenusResponse{Release: menuReleaseBody(rel), Menus: menuBodies(menus)}, err)
 }
 
 // GetNavigation godoc
@@ -283,7 +283,7 @@ func (h *Handler) GetNavigation(c *gin.Context) {
 		return
 	}
 	app, rel, menus, err := h.applications.GetPublishedNavigation(c.Request.Context(), r.ApplicationID)
-	respond(c, h.logger, NavigationResponse{Application: app, Release: rel, Menus: menus}, err)
+	respond(c, h.logger, NavigationResponse{Application: applicationBody(app), Release: menuReleaseBody(rel), Menus: menuBodies(menus)}, err)
 }
 
 // ListNavigations godoc
@@ -304,9 +304,9 @@ func (h *Handler) ListNavigations(c *gin.Context) {
 	response := BatchNavigationResponse{Items: make([]NavigationResponse, 0, len(items))}
 	for _, item := range items {
 		response.Items = append(response.Items, NavigationResponse{
-			Application: item.Application,
-			Release:     item.Release,
-			Menus:       item.Menus,
+			Application: applicationBody(item.Application),
+			Release:     menuReleaseBody(item.Release),
+			Menus:       menuBodies(item.Menus),
 		})
 	}
 	respond(c, h.logger, response, err)
@@ -319,7 +319,7 @@ func (h *Handler) ListNavigations(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body GrantRequest true "Tenant application grant"
-// @Success 200 {object} Response{body=application.Grant}
+// @Success 200 {object} Response{body=GrantBody}
 // @Router /api/v1/applications/tenant-grants/grant [post]
 func (h *Handler) Grant(c *gin.Context) {
 	var r GrantRequest
@@ -332,7 +332,7 @@ func (h *Handler) Grant(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.Grant(c.Request.Context(), r.TenantID, r.ApplicationID, r.ValidFrom, r.ValidUntil, r.Source, entitlements, r.ExpectedVersion)
-	respond(c, h.logger, v, err)
+	respond(c, h.logger, grantBody(v), err)
 }
 
 // Revoke godoc
@@ -342,7 +342,7 @@ func (h *Handler) Grant(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body RevokeGrantRequest true "Grant version"
-// @Success 200 {object} Response{body=application.Grant}
+// @Success 200 {object} Response{body=GrantBody}
 // @Router /api/v1/applications/tenant-grants/revoke [post]
 func (h *Handler) Revoke(c *gin.Context) {
 	var r RevokeGrantRequest
@@ -350,7 +350,7 @@ func (h *Handler) Revoke(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.Revoke(c.Request.Context(), r.TenantID, r.ApplicationID, r.Version)
-	respond(c, h.logger, v, err)
+	respond(c, h.logger, grantBody(v), err)
 }
 
 // ListTenantApplications godoc
@@ -385,7 +385,7 @@ func (h *Handler) listTenantApplications(c *gin.Context) {
 		return
 	}
 	grants, apps, err := h.applications.ListTenantApplications(c.Request.Context(), r.TenantID, r.ActiveOnly, r.Page, r.PageSize)
-	respond(c, h.logger, TenantApplicationsResponse{Grants: GrantPage{Items: grants.Items, Total: grants.Total, Page: grants.Page, PageSize: grants.PageSize}, Applications: apps}, err)
+	respond(c, h.logger, TenantApplicationsResponse{Grants: GrantPageBody{Items: grantBodies(grants.Items), Total: grants.Total, Page: grants.Page, PageSize: grants.PageSize}, Applications: applicationBodies(apps)}, err)
 }
 
 // BatchCheck godoc

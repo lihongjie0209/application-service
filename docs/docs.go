@@ -55,7 +55,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "body": {
-                                            "$ref": "#/definitions/application.Application"
+                                            "$ref": "#/definitions/httptransport.ApplicationBody"
                                         }
                                     }
                                 }
@@ -105,7 +105,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "body": {
-                                            "$ref": "#/definitions/application.Application"
+                                            "$ref": "#/definitions/httptransport.ApplicationBody"
                                         }
                                     }
                                 }
@@ -147,7 +147,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httptransport.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httptransport.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "body": {
+                                            "$ref": "#/definitions/httptransport.ApplicationPageBody"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -325,7 +337,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "body": {
-                                            "$ref": "#/definitions/application.Menu"
+                                            "$ref": "#/definitions/httptransport.MenuBody"
                                         }
                                     }
                                 }
@@ -513,7 +525,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "body": {
-                                            "$ref": "#/definitions/application.Grant"
+                                            "$ref": "#/definitions/httptransport.GrantBody"
                                         }
                                     }
                                 }
@@ -663,7 +675,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "body": {
-                                            "$ref": "#/definitions/application.Grant"
+                                            "$ref": "#/definitions/httptransport.GrantBody"
                                         }
                                     }
                                 }
@@ -713,7 +725,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "body": {
-                                            "$ref": "#/definitions/application.Application"
+                                            "$ref": "#/definitions/httptransport.ApplicationBody"
                                         }
                                     }
                                 }
@@ -884,7 +896,52 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "application.Application": {
+        "buildinfo.Info": {
+            "type": "object",
+            "properties": {
+                "build_time": {
+                    "type": "string"
+                },
+                "commit": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "uptime": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "health.Dependency": {
+            "type": "object",
+            "properties": {
+                "latency": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "health.Status": {
+            "type": "object",
+            "properties": {
+                "dependencies": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/health.Dependency"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "httptransport.ApplicationBody": {
             "type": "object",
             "properties": {
                 "code": {
@@ -934,201 +991,6 @@ const docTemplate = `{
                 }
             }
         },
-        "application.Grant": {
-            "type": "object",
-            "properties": {
-                "application_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "entitlements_json": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "valid_from": {
-                    "type": "string"
-                },
-                "valid_until": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "integer"
-                }
-            }
-        },
-        "application.Menu": {
-            "type": "object",
-            "properties": {
-                "application_id": {
-                    "type": "string"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "component": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "external_url": {
-                    "type": "string"
-                },
-                "i18n_key": {
-                    "type": "string"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "parent_id": {
-                    "type": "string"
-                },
-                "permission_code": {
-                    "type": "string"
-                },
-                "permission_scope": {
-                    "type": "string"
-                },
-                "release_number": {
-                    "type": "integer"
-                },
-                "route": {
-                    "type": "string"
-                },
-                "sort_order": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "integer"
-                },
-                "visible": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "application.MenuRelease": {
-            "type": "object",
-            "properties": {
-                "application_id": {
-                    "type": "string"
-                },
-                "comment": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "release_number": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "integer"
-                }
-            }
-        },
-        "buildinfo.Info": {
-            "type": "object",
-            "properties": {
-                "build_time": {
-                    "type": "string"
-                },
-                "commit": {
-                    "type": "string"
-                },
-                "started_at": {
-                    "type": "string"
-                },
-                "uptime": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "string"
-                }
-            }
-        },
-        "health.Dependency": {
-            "type": "object",
-            "properties": {
-                "latency": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "health.Status": {
-            "type": "object",
-            "properties": {
-                "dependencies": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/health.Dependency"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
         "httptransport.ApplicationIDRequest": {
             "type": "object",
             "required": [
@@ -1137,6 +999,26 @@ const docTemplate = `{
             "properties": {
                 "application_id": {
                     "type": "string"
+                }
+            }
+        },
+        "httptransport.ApplicationPageBody": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httptransport.ApplicationBody"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -1231,13 +1113,57 @@ const docTemplate = `{
                 }
             }
         },
-        "httptransport.GrantPage": {
+        "httptransport.GrantBody": {
+            "type": "object",
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "entitlements_json": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "valid_from": {
+                    "type": "string"
+                },
+                "valid_until": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "httptransport.GrantPageBody": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/application.Grant"
+                        "$ref": "#/definitions/httptransport.GrantBody"
                     }
                 },
                 "page": {
@@ -1334,20 +1260,182 @@ const docTemplate = `{
                 }
             }
         },
+        "httptransport.MenuBody": {
+            "type": "object",
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "component": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "external_url": {
+                    "type": "string"
+                },
+                "i18n_key": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "permission_code": {
+                    "type": "string"
+                },
+                "permission_scope": {
+                    "type": "string"
+                },
+                "release_number": {
+                    "type": "integer"
+                },
+                "route": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "visible": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "httptransport.MenuInputBody": {
+            "type": "object",
+            "required": [
+                "application_id",
+                "code",
+                "name",
+                "type"
+            ],
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "component": {
+                    "type": "string"
+                },
+                "external_url": {
+                    "type": "string"
+                },
+                "i18n_key": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "permission_code": {
+                    "type": "string"
+                },
+                "permission_scope": {
+                    "type": "string"
+                },
+                "route": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "visible": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "httptransport.MenuReleaseBody": {
+            "type": "object",
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "release_number": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
         "httptransport.NavigationResponse": {
             "type": "object",
             "properties": {
                 "application": {
-                    "$ref": "#/definitions/application.Application"
+                    "$ref": "#/definitions/httptransport.ApplicationBody"
                 },
                 "menus": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/application.Menu"
+                        "$ref": "#/definitions/httptransport.MenuBody"
                     }
                 },
                 "release": {
-                    "$ref": "#/definitions/application.MenuRelease"
+                    "$ref": "#/definitions/httptransport.MenuReleaseBody"
                 }
             }
         },
@@ -1375,11 +1463,11 @@ const docTemplate = `{
                 "menus": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/application.Menu"
+                        "$ref": "#/definitions/httptransport.MenuBody"
                     }
                 },
                 "release": {
-                    "$ref": "#/definitions/application.MenuRelease"
+                    "$ref": "#/definitions/httptransport.MenuReleaseBody"
                 }
             }
         },
@@ -1423,11 +1511,11 @@ const docTemplate = `{
                 "applications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/application.Application"
+                        "$ref": "#/definitions/httptransport.ApplicationBody"
                     }
                 },
                 "grants": {
-                    "$ref": "#/definitions/httptransport.GrantPage"
+                    "$ref": "#/definitions/httptransport.GrantPageBody"
                 }
             }
         },
@@ -1479,7 +1567,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "menu": {
-                    "$ref": "#/definitions/application.Menu"
+                    "$ref": "#/definitions/httptransport.MenuInputBody"
                 }
             }
         }
