@@ -219,6 +219,11 @@ func TestValidateMenuRoutesRejectsFrontendRouteCollisions(t *testing.T) {
 			want:  apperror.CodeConflict,
 		},
 		{
+			name:  "application shell collision",
+			menus: []Menu{{Code: "root", Type: "page", Route: "/apps/billing-center", Status: "active"}},
+			want:  apperror.CodeConflict,
+		},
+		{
 			name: "inactive route ignored",
 			menus: []Menu{
 				{Code: "plans", Type: "page", Route: "plans", Status: "active"},

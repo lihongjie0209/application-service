@@ -575,7 +575,10 @@ func validateMenuTree(items []Menu) error {
 
 func validateMenuRoutes(applicationCode string, items []Menu) error {
 	scope := "/apps/" + normalizedRouteSegment(applicationCode)
-	seen := map[string]string{scope + "/overview": "__workspace__"}
+	seen := map[string]string{
+		scope:               "__application__",
+		scope + "/overview": "__workspace__",
+	}
 	for _, item := range items {
 		if !isActiveRouteMenu(item) {
 			continue
