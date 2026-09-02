@@ -24,6 +24,26 @@ func TestLoad_EnvironmentOverridesFile(t *testing.T) {
 	}
 }
 
+func TestLoad_EnvironmentOverridesStringSlice(t *testing.T) {
+	t.Setenv("APP_AUTH_PSK_GRPC_METHODS", "/platform.application.v1.ApplicationService/BatchCheckTenantApplications,/platform.application.v1.ApplicationService/GetApplication")
+	cfg, err := Load("../../config/config.yaml")
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	want := []string{
+		"/platform.application.v1.ApplicationService/BatchCheckTenantApplications",
+		"/platform.application.v1.ApplicationService/GetApplication",
+	}
+	if len(cfg.Auth.PSK.GRPCMethods) != len(want) {
+		t.Fatalf("Auth.PSK.GRPCMethods = %#v, want %#v", cfg.Auth.PSK.GRPCMethods, want)
+	}
+	for index := range want {
+		if cfg.Auth.PSK.GRPCMethods[index] != want[index] {
+			t.Fatalf("Auth.PSK.GRPCMethods = %#v, want %#v", cfg.Auth.PSK.GRPCMethods, want)
+		}
+	}
+}
+
 func TestConfig_ValidateJWTSecret(t *testing.T) {
 	t.Parallel()
 	cfg := Config{HTTP: HTTP{Address: "127.0.0.1:8080"}, Auth: Auth{ClientID: "client", ClientSecret: "secret"}, JWT: JWT{Secret: "short"}}
