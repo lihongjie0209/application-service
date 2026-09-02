@@ -291,4 +291,10 @@ applications:
     sort_order: 170
     menus:
       - {code: subscriptions, name: Webhook 订阅, route: subscriptions, component: webhook-center.subscriptions, permission_code: webhook.subscription.list, permission_scope: tenant, sort_order: 10}
+      - {code: subscriptions.create, parent: subscriptions, type: action, name: 创建 Webhook 订阅, permission_code: webhook.subscription.create, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: subscriptions.update, parent: subscriptions, type: action, name: 编辑 Webhook 订阅, permission_code: webhook.subscription.update, permission_scope: tenant, visible: false, sort_order: 12}
+      - {code: subscriptions.test, parent: subscriptions, type: action, name: 测试 Webhook 订阅, permission_code: webhook.subscription.test, permission_scope: tenant, visible: false, sort_order: 13}
+      - {code: subscriptions.rotate-secret, parent: subscriptions, type: action, name: 轮换 Webhook 密钥, permission_code: webhook.subscription.rotate-secret, permission_scope: tenant, visible: false, sort_order: 14}
+      - {code: subscriptions.delete, parent: subscriptions, type: action, name: 删除 Webhook 订阅, permission_code: webhook.subscription.delete, permission_scope: tenant, visible: false, sort_order: 15}
       - {code: deliveries, name: 投递记录, route: deliveries, component: webhook-center.deliveries, permission_code: webhook.delivery.list, permission_scope: tenant, sort_order: 20}
+      - {code: deliveries.replay, parent: deliveries, type: action, name: 重放 Webhook 投递, permission_code: webhook.delivery.replay, permission_scope: tenant, visible: false, sort_order: 21}
