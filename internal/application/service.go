@@ -50,6 +50,7 @@ func NewService(repository Repository, transactor *database.Transactor, locker *
 }
 
 var codePattern = regexp.MustCompile(`^[a-z][a-z0-9._-]{1,127}$`)
+var componentSuffixPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,127}(?:\.[a-z][a-z0-9_-]{0,127})*$`)
 
 func (s *Service) CreateApplication(ctx context.Context, in ApplicationInput) (Application, error) {
 	actor, err := actor(ctx)
@@ -484,8 +485,8 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 	if v.PermissionScope != "tenant" && v.PermissionScope != "platform" {
 		return Menu{}, apperror.Invalid("permission_scope must be tenant or platform", nil)
 	}
-	if v.Type == "page" && v.Route == "" {
-		return Menu{}, apperror.Invalid("page menu requires route", nil)
+	if v.Type == "page" && (v.Route == "" || v.Component == "") {
+		return Menu{}, apperror.Invalid("page menu requires route and component", nil)
 	}
 	if v.Type == "external" && v.ExternalURL == "" {
 		return Menu{}, apperror.Invalid("external menu requires external_url", nil)
@@ -493,8 +494,12 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 	if v.Type == "external" && !validExternalURL(v.ExternalURL) {
 		return Menu{}, apperror.Invalid("external menu requires an absolute HTTP(S) URL without user information", nil)
 	}
-	if _, err := s.repository.GetApplication(ctx, v.ApplicationID); err != nil {
+	app, err := s.repository.GetApplication(ctx, v.ApplicationID)
+	if err != nil {
 		return Menu{}, translate(err)
+	}
+	if v.Type == "page" && !validPageComponent(app.Code, v.Component) {
+		return Menu{}, apperror.Invalid("page component must belong to the application namespace", nil)
 	}
 	items, err := s.repository.ListDraftMenus(ctx, v.ApplicationID)
 	if err != nil {
@@ -518,6 +523,12 @@ func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Men
 		return Menu{}, err
 	}
 	return v, nil
+}
+
+func validPageComponent(applicationCode, component string) bool {
+	prefix := strings.TrimSpace(applicationCode) + "."
+	component = strings.TrimSpace(component)
+	return prefix != "." && strings.HasPrefix(component, prefix) && componentSuffixPattern.MatchString(strings.TrimPrefix(component, prefix))
 }
 
 func validExternalURL(raw string) bool {

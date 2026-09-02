@@ -218,6 +218,49 @@ func TestValidExternalURL(t *testing.T) {
 	}
 }
 
+type menuValidationRepository struct{ Repository }
+
+func (menuValidationRepository) GetApplication(context.Context, string) (Application, error) {
+	return Application{ID: "app-1", Code: "billing-center"}, nil
+}
+
+func (menuValidationRepository) ListDraftMenus(context.Context, string) ([]Menu, error) {
+	return nil, nil
+}
+
+func TestValidateMenuRequiresApplicationComponentNamespace(t *testing.T) {
+	t.Parallel()
+	service := &Service{repository: menuValidationRepository{}}
+	tests := []struct {
+		name      string
+		component string
+		wantCode  int
+	}{
+		{name: "owned page", component: "billing-center.plans"},
+		{name: "owned nested page", component: "billing-center.admin.plans"},
+		{name: "missing component", wantCode: apperror.CodeInvalidArgument},
+		{name: "different application", component: "platform-admin.applications", wantCode: apperror.CodeInvalidArgument},
+		{name: "prefix confusion", component: "billing-center-extra.plans", wantCode: apperror.CodeInvalidArgument},
+		{name: "path traversal", component: "billing-center...unsafe", wantCode: apperror.CodeInvalidArgument},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := service.validateMenu(t.Context(), Menu{
+				ApplicationID: "app-1",
+				Code:          "plans",
+				Type:          "page",
+				Name:          "Plans",
+				Route:         "plans",
+				Component:     test.component,
+			}, 0)
+			if got := appErrorCode(err); got != test.wantCode {
+				t.Fatalf("validateMenu() error = %#v, code %d, want %d", err, got, test.wantCode)
+			}
+		})
+	}
+}
+
 func TestSearchDocumentUsesTenantVisibilityAndCompositeVersion(t *testing.T) {
 	createdAt := time.Date(2026, time.August, 31, 10, 0, 0, 0, time.FixedZone("CST", 8*60*60))
 	updatedAt := createdAt.Add(time.Hour)
