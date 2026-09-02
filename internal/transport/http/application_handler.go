@@ -238,7 +238,7 @@ func (h *Handler) DeleteMenu(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body ApplicationIDRequest true "Application ID"
-// @Success 200 {object} Response
+// @Success 200 {object} Response{body=[]MenuBody}
 // @Router /api/v1/applications/menus/draft/list [post]
 func (h *Handler) ListMenuDraft(c *gin.Context) {
 	var r ApplicationIDRequest
@@ -395,7 +395,7 @@ func (h *Handler) listTenantApplications(c *gin.Context) {
 // @Produce json
 // @Security Bearer
 // @Param request body BatchCheckRequest true "Tenant and application IDs"
-// @Success 200 {object} Response
+// @Success 200 {object} Response{body=[]Decision}
 // @Router /api/v1/applications/tenant-grants/batch-check [post]
 func (h *Handler) BatchCheck(c *gin.Context) {
 	var r BatchCheckRequest

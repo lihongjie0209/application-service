@@ -132,6 +132,15 @@ definitions:
     - code
     - name
     type: object
+  httptransport.Decision:
+    properties:
+      application_id:
+        type: string
+      granted:
+        type: boolean
+      reason:
+        type: string
+    type: object
   httptransport.DeleteMenuRequest:
     properties:
       id:
@@ -577,7 +586,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httptransport.Response'
+            allOf:
+            - $ref: '#/definitions/httptransport.Response'
+            - properties:
+                body:
+                  items:
+                    $ref: '#/definitions/httptransport.MenuBody'
+                  type: array
+              type: object
       security:
       - Bearer: []
       summary: List menu drafts
@@ -716,7 +732,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httptransport.Response'
+            allOf:
+            - $ref: '#/definitions/httptransport.Response'
+            - properties:
+                body:
+                  items:
+                    $ref: '#/definitions/httptransport.Decision'
+                  type: array
+              type: object
       security:
       - Bearer: []
       summary: Batch-check tenant application grants
