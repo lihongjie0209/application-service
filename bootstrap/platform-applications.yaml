@@ -48,6 +48,7 @@ applications:
       - {code: service-accounts, name: 服务账号, route: service-accounts, component: platform-admin.service-accounts, permission_code: identity.service-account.list, permission_scope: platform, sort_order: 120}
       - {code: service-accounts.create, parent: service-accounts, type: action, name: 创建服务账号, permission_code: identity.service-account.create, permission_scope: platform, visible: false, sort_order: 121}
       - {code: service-accounts.update-status, parent: service-accounts, type: action, name: 更新服务账号状态, permission_code: identity.service-account.update-status, permission_scope: platform, visible: false, sort_order: 122}
+      - {code: service-accounts.rotate-secret, parent: service-accounts, type: action, name: 轮换服务账号密钥, permission_code: identity.service-account.rotate-secret, permission_scope: platform, visible: false, sort_order: 123}
       - {code: sessions, name: 会话管理, route: sessions, component: platform-admin.sessions, permission_code: identity.session.list, permission_scope: platform, sort_order: 130}
       - {code: sessions.revoke, parent: sessions, type: action, name: 撤销会话, permission_code: identity.session.revoke, permission_scope: platform, visible: false, sort_order: 131}
       - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, permission_code: authorization.role.list, permission_scope: tenant, sort_order: 140}
