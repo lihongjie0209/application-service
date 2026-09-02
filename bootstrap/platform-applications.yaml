@@ -129,6 +129,11 @@ applications:
     sort_order: 60
     menus:
       - {code: jobs, name: 定时任务, route: jobs, component: scheduler-center.jobs, permission_code: scheduler.job.list, permission_scope: tenant, sort_order: 10}
+      - {code: jobs.create, parent: jobs, type: action, name: 创建定时任务, permission_code: scheduler.job.create, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: jobs.update, parent: jobs, type: action, name: 编辑定时任务, permission_code: scheduler.job.update, permission_scope: tenant, visible: false, sort_order: 12}
+      - {code: jobs.delete, parent: jobs, type: action, name: 删除定时任务, permission_code: scheduler.job.delete, permission_scope: tenant, visible: false, sort_order: 13}
+      - {code: jobs.trigger, parent: jobs, type: action, name: 立即执行任务, permission_code: scheduler.job.trigger, permission_scope: tenant, visible: false, sort_order: 14}
+      - {code: jobs.executions, parent: jobs, type: action, name: 查看执行记录, permission_code: scheduler.execution.list, permission_scope: tenant, visible: false, sort_order: 15}
 
   - code: dictionary-center
     name: 数据字典
