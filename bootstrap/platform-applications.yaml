@@ -219,9 +219,19 @@ applications:
     sort_order: 130
     menus:
       - {code: plans, name: 套餐管理, route: plans, component: billing-center.plans, permission_code: billing.plan.list, permission_scope: platform, sort_order: 10}
+      - {code: plans.create, parent: plans, type: action, name: 创建套餐, permission_code: billing.plan.create, permission_scope: platform, visible: false, sort_order: 11}
+      - {code: plans.update, parent: plans, type: action, name: 编辑套餐和用量价格, permission_code: billing.plan.update, permission_scope: platform, visible: false, sort_order: 12}
+      - {code: plans.read, parent: plans, type: action, name: 查看套餐用量价格, permission_code: billing.plan.read, permission_scope: platform, visible: false, sort_order: 13}
+      - {code: plans.delete-price, parent: plans, type: action, name: 删除套餐用量价格, permission_code: billing.plan.delete, permission_scope: platform, visible: false, sort_order: 14}
       - {code: subscriptions, name: 订阅管理, route: subscriptions, component: billing-center.subscriptions, permission_code: billing.subscription.list, permission_scope: tenant, sort_order: 20}
+      - {code: subscriptions.create, parent: subscriptions, type: action, name: 创建订阅, permission_code: billing.subscription.create, permission_scope: tenant, visible: false, sort_order: 21}
+      - {code: subscriptions.cancel, parent: subscriptions, type: action, name: 取消订阅, permission_code: billing.subscription.cancel, permission_scope: tenant, visible: false, sort_order: 22}
       - {code: invoices, name: 账单管理, route: invoices, component: billing-center.invoices, permission_code: billing.invoice.list, permission_scope: tenant, sort_order: 30}
+      - {code: invoices.finalize, parent: invoices, type: action, name: 确认账单, permission_code: billing.invoice.finalize, permission_scope: tenant, visible: false, sort_order: 31}
+      - {code: invoices.void, parent: invoices, type: action, name: 作废账单, permission_code: billing.invoice.void, permission_scope: tenant, visible: false, sort_order: 32}
       - {code: payments, name: 支付与退款, route: payments, component: billing-center.payments, permission_code: billing.payment.list, permission_scope: tenant, sort_order: 40}
+      - {code: payments.create, parent: payments, type: action, name: 发起支付, permission_code: billing.payment.create, permission_scope: tenant, visible: false, sort_order: 41}
+      - {code: payments.refund, parent: payments, type: action, name: 记录退款, permission_code: billing.payment.refund, permission_scope: tenant, visible: false, sort_order: 42}
 
   - code: rule-center
     name: 规则中心
