@@ -56,6 +56,10 @@ type DeleteMenuRequest struct {
 	ID      string `json:"id" binding:"required"`
 	Version int64  `json:"version" binding:"required"`
 }
+type GetTenantApplicationGrantRequest struct {
+	TenantID      string `json:"tenant_id" binding:"required"`
+	ApplicationID string `json:"application_id" binding:"required"`
+}
 type ApplicationIDRequest struct {
 	ApplicationID string `json:"application_id" binding:"required"`
 }
@@ -239,6 +243,24 @@ func (h *Handler) UpsertMenu(c *gin.Context) {
 	respond(c, h.logger, menuBody(v), err)
 }
 
+// GetMenu godoc
+// @Summary Get a menu draft by ID
+// @Tags menus
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body IDRequest true "Menu ID"
+// @Success 200 {object} Response{body=MenuBody}
+// @Router /api/v1/applications/menus/get [post]
+func (h *Handler) GetMenu(c *gin.Context) {
+	var r IDRequest
+	if !bind(c, h.logger, &r) {
+		return
+	}
+	v, err := h.applications.GetMenu(c.Request.Context(), r.ID)
+	respond(c, h.logger, menuBody(v), err)
+}
+
 // DeleteMenu godoc
 // @Summary Delete a menu draft with optimistic locking
 // @Tags menus
@@ -358,6 +380,24 @@ func (h *Handler) Grant(c *gin.Context) {
 		return
 	}
 	v, err := h.applications.Grant(c.Request.Context(), r.TenantID, r.ApplicationID, r.ValidFrom, r.ValidUntil, r.Source, entitlements, r.ExpectedVersion)
+	respond(c, h.logger, grantBody(v), err)
+}
+
+// GetTenantApplicationGrant godoc
+// @Summary Get a tenant application grant
+// @Tags tenant-applications
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body GetTenantApplicationGrantRequest true "Tenant and application IDs"
+// @Success 200 {object} Response{body=GrantBody}
+// @Router /api/v1/applications/tenant-grants/get [post]
+func (h *Handler) GetTenantApplicationGrant(c *gin.Context) {
+	var r GetTenantApplicationGrantRequest
+	if !bind(c, h.logger, &r) {
+		return
+	}
+	v, err := h.applications.GetGrant(c.Request.Context(), r.TenantID, r.ApplicationID)
 	respond(c, h.logger, grantBody(v), err)
 }
 

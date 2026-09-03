@@ -24,6 +24,42 @@ type applicationDirectoryRepository struct {
 	batchIDs      []string
 }
 
+type mutationLookupRepository struct {
+	Repository
+	menuID        string
+	tenantID      string
+	applicationID string
+}
+
+func (r *mutationLookupRepository) GetMenu(_ context.Context, id string) (Menu, error) {
+	r.menuID = id
+	return Menu{ID: id, Version: 3}, nil
+}
+
+func (r *mutationLookupRepository) GetGrant(_ context.Context, tenantID, applicationID string) (Grant, error) {
+	r.tenantID, r.applicationID = tenantID, applicationID
+	return Grant{TenantID: tenantID, ApplicationID: applicationID, Version: 4}, nil
+}
+
+func TestMutationLookupsNormalizeIDsAndEnforceTenantScope(t *testing.T) {
+	t.Parallel()
+	repository := &mutationLookupRepository{}
+	service := &Service{repository: repository, now: time.Now}
+	menu, err := service.GetMenu(t.Context(), " menu-1 ")
+	if err != nil || menu.Version != 3 || repository.menuID != "menu-1" {
+		t.Fatalf("GetMenu() = (%+v, %v), id=%q", menu, err, repository.menuID)
+	}
+
+	ctx := principal.WithContext(t.Context(), principal.Principal{ID: "user-1", Type: principal.TypeUser, TenantID: "tenant-1"})
+	grant, err := service.GetGrant(ctx, " tenant-1 ", " app-1 ")
+	if err != nil || grant.Version != 4 || repository.tenantID != "tenant-1" || repository.applicationID != "app-1" {
+		t.Fatalf("GetGrant() = (%+v, %v), tenant=%q application=%q", grant, err, repository.tenantID, repository.applicationID)
+	}
+	if _, err := service.GetGrant(ctx, "tenant-2", "app-1"); appErrorCode(err) != apperror.CodeForbidden {
+		t.Fatalf("cross-tenant GetGrant() error = %#v, want forbidden", err)
+	}
+}
+
 func (r *applicationDirectoryRepository) SearchApplications(_ context.Context, keyword, status string, _, _ int) ([]Application, int64, error) {
 	r.searchKeyword, r.searchStatus = keyword, status
 	return []Application{{ID: "app-1"}}, 1, nil

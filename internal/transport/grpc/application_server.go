@@ -39,6 +39,10 @@ func (s *applicationServer) UpsertMenu(ctx context.Context, r *applicationv1.Ups
 	v, e := s.service.UpsertMenu(ctx, applicationdomain.FromProtoMenu(r.GetMenu()), r.GetExpectedVersion())
 	return &applicationv1.UpsertMenuResponse{Menu: applicationdomain.ToProtoMenu(v)}, e
 }
+func (s *applicationServer) GetMenu(ctx context.Context, r *applicationv1.GetMenuRequest) (*applicationv1.GetMenuResponse, error) {
+	v, e := s.service.GetMenu(ctx, r.GetId())
+	return &applicationv1.GetMenuResponse{Menu: applicationdomain.ToProtoMenu(v)}, e
+}
 func (s *applicationServer) DeleteMenu(ctx context.Context, r *applicationv1.DeleteMenuRequest) (*applicationv1.DeleteMenuResponse, error) {
 	return &applicationv1.DeleteMenuResponse{}, s.service.DeleteMenu(ctx, r.GetId(), r.GetVersion())
 }
@@ -78,6 +82,10 @@ func (s *applicationServer) GrantTenantApplication(ctx context.Context, r *appli
 	}
 	grant, e := s.service.Grant(ctx, r.GetTenantId(), r.GetApplicationId(), from, until, r.GetSource(), r.GetEntitlementsJson(), r.GetExpectedVersion())
 	return &applicationv1.GrantTenantApplicationResponse{Grant: applicationdomain.ToProtoGrant(grant)}, e
+}
+func (s *applicationServer) GetTenantApplicationGrant(ctx context.Context, r *applicationv1.GetTenantApplicationGrantRequest) (*applicationv1.GetTenantApplicationGrantResponse, error) {
+	v, e := s.service.GetGrant(ctx, r.GetTenantId(), r.GetApplicationId())
+	return &applicationv1.GetTenantApplicationGrantResponse{Grant: applicationdomain.ToProtoGrant(v)}, e
 }
 func (s *applicationServer) RevokeTenantApplication(ctx context.Context, r *applicationv1.RevokeTenantApplicationRequest) (*applicationv1.RevokeTenantApplicationResponse, error) {
 	v, e := s.service.Revoke(ctx, r.GetTenantId(), r.GetApplicationId(), r.GetVersion())

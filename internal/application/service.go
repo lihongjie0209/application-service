@@ -115,6 +115,14 @@ func (s *Service) GetApplication(ctx context.Context, id string) (Application, e
 	v, err := s.repository.GetApplication(ctx, strings.TrimSpace(id))
 	return v, translate(err)
 }
+func (s *Service) GetMenu(ctx context.Context, id string) (Menu, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return Menu{}, apperror.Invalid("menu id is required", nil)
+	}
+	v, err := s.repository.GetMenu(ctx, id)
+	return v, translate(err)
+}
 func (s *Service) ListApplications(ctx context.Context, status string, page, pageSize int) (Page[Application], error) {
 	page, pageSize, err := pagination(page, pageSize)
 	if err != nil {
@@ -404,6 +412,17 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 		return s.addSearchProjectionEvent(ctx, tx, application, current, actor, now)
 	})
 	return current, translate(err)
+}
+func (s *Service) GetGrant(ctx context.Context, tenantID, appID string) (Grant, error) {
+	tenantID, appID = strings.TrimSpace(tenantID), strings.TrimSpace(appID)
+	if tenantID == "" || appID == "" {
+		return Grant{}, apperror.Invalid("tenant_id and application_id are required", nil)
+	}
+	if err := authorizeTenant(ctx, tenantID); err != nil {
+		return Grant{}, err
+	}
+	v, err := s.repository.GetGrant(ctx, tenantID, appID)
+	return v, translate(err)
 }
 func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected int64) (Grant, error) {
 	actor, err := actor(ctx)

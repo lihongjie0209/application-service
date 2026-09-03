@@ -57,11 +57,13 @@ func TestApplicationGRPCRequirementCoversEveryBusinessMethod(t *testing.T) {
 		applicationv1.ApplicationService_GetApplication_FullMethodName,
 		applicationv1.ApplicationService_ListApplications_FullMethodName,
 		applicationv1.ApplicationService_UpsertMenu_FullMethodName,
+		applicationv1.ApplicationService_GetMenu_FullMethodName,
 		applicationv1.ApplicationService_DeleteMenu_FullMethodName,
 		applicationv1.ApplicationService_ListMenuDraft_FullMethodName,
 		applicationv1.ApplicationService_PublishMenus_FullMethodName,
 		applicationv1.ApplicationService_GetPublishedNavigation_FullMethodName,
 		applicationv1.ApplicationService_GrantTenantApplication_FullMethodName,
+		applicationv1.ApplicationService_GetTenantApplicationGrant_FullMethodName,
 		applicationv1.ApplicationService_RevokeTenantApplication_FullMethodName,
 		applicationv1.ApplicationService_ListTenantApplications_FullMethodName,
 		applicationv1.ApplicationService_BatchCheckTenantApplications_FullMethodName,
@@ -83,6 +85,7 @@ func TestApplicationGRPCRequirementSeparatesPlatformManagementFromPrincipalReads
 		applicationv1.ApplicationService_CreateApplication_FullMethodName,
 		applicationv1.ApplicationService_PublishMenus_FullMethodName,
 		applicationv1.ApplicationService_GrantTenantApplication_FullMethodName,
+		applicationv1.ApplicationService_GetTenantApplicationGrant_FullMethodName,
 	} {
 		requirement, _ := resolve(method)
 		if requirement.Scope != platformauthz.ScopePlatform {
