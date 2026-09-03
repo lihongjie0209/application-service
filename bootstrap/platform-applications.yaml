@@ -113,7 +113,8 @@ applications:
       - {code: providers, name: 供应商路由, route: providers, component: notification-center.providers, permission_code: notification.provider.list, permission_scope: tenant, sort_order: 20}
       - {code: providers.update, parent: providers, type: action, name: 保存供应商路由, permission_code: notification.provider.update, permission_scope: tenant, visible: false, sort_order: 21}
       - {code: deliveries, name: 投递记录, route: deliveries, component: notification-center.deliveries, permission_code: notification.delivery.list, permission_scope: tenant, sort_order: 30}
-      - {code: deliveries.send, parent: deliveries, type: action, name: 发送通知, permission_code: notification.delivery.send, permission_scope: tenant, visible: false, sort_order: 31}
+      - {code: deliveries.read, parent: deliveries, type: action, name: 查看投递详情, permission_code: notification.delivery.read, permission_scope: tenant, visible: false, sort_order: 31}
+      - {code: deliveries.send, parent: deliveries, type: action, name: 发送通知, permission_code: notification.delivery.send, permission_scope: tenant, visible: false, sort_order: 32}
 
   - code: file-center
     name: 文件中心
