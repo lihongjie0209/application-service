@@ -53,11 +53,11 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	if len(components) != 43 {
 		t.Fatalf("page components = %d, want 43", len(components))
 	}
-	if len(actionPermissions) != 130 {
-		t.Fatalf("action permissions = %d, want 130", len(actionPermissions))
+	if len(actionPermissions) != 132 {
+		t.Fatalf("action permissions = %d, want 132", len(actionPermissions))
 	}
-	if actionCount != 138 {
-		t.Fatalf("action nodes = %d, want 138", actionCount)
+	if actionCount != 140 {
+		t.Fatalf("action nodes = %d, want 140", actionCount)
 	}
 	if _, exists := actionPermissions["identity.user.update-profile"]; !exists {
 		t.Fatal("user profile update permission is missing")
@@ -95,5 +95,10 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	}
 	if _, exists := actionPermissions["rule.set.read"]; !exists {
 		t.Fatal("rule set read permission is missing")
+	}
+	for _, permission := range []string{"webhook.subscription.read", "webhook.delivery.read"} {
+		if _, exists := actionPermissions[permission]; !exists {
+			t.Fatalf("webhook detail permission %q is missing", permission)
+		}
 	}
 }
