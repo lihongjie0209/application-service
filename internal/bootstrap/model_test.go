@@ -53,11 +53,11 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	if len(components) != 43 {
 		t.Fatalf("page components = %d, want 43", len(components))
 	}
-	if len(actionPermissions) != 140 {
-		t.Fatalf("action permissions = %d, want 140", len(actionPermissions))
+	if len(actionPermissions) != 142 {
+		t.Fatalf("action permissions = %d, want 142", len(actionPermissions))
 	}
-	if actionCount != 148 {
-		t.Fatalf("action nodes = %d, want 148", actionCount)
+	if actionCount != 150 {
+		t.Fatalf("action nodes = %d, want 150", actionCount)
 	}
 	if _, exists := actionPermissions["identity.user.update-profile"]; !exists {
 		t.Fatal("user profile update permission is missing")
