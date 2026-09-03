@@ -163,10 +163,11 @@ applications:
       - {code: definitions.create, parent: definitions, type: action, name: 创建字典, permission_code: dictionary.definition.create, permission_scope: tenant, visible: false, sort_order: 12}
       - {code: definitions.update, parent: definitions, type: action, name: 编辑字典, permission_code: dictionary.definition.update, permission_scope: tenant, visible: false, sort_order: 13}
       - {code: definitions.items, parent: definitions, type: action, name: 查看字典条目, permission_code: dictionary.item.list, permission_scope: tenant, visible: false, sort_order: 14}
-      - {code: definitions.items-update, parent: definitions, type: action, name: 编辑字典条目, permission_code: dictionary.item.update, permission_scope: tenant, visible: false, sort_order: 15}
-      - {code: definitions.items-delete, parent: definitions, type: action, name: 删除字典条目, permission_code: dictionary.item.delete, permission_scope: tenant, visible: false, sort_order: 16}
-      - {code: definitions.publish, parent: definitions, type: action, name: 发布字典, permission_code: dictionary.definition.publish, permission_scope: tenant, visible: false, sort_order: 17}
-      - {code: definitions.query, parent: definitions, type: action, name: 查询字典数据, permission_code: dictionary.data.query, permission_scope: tenant, visible: false, sort_order: 18}
+      - {code: definitions.items-read, parent: definitions, type: action, name: 查看字典条目详情, permission_code: dictionary.item.read, permission_scope: tenant, visible: false, sort_order: 15}
+      - {code: definitions.items-update, parent: definitions, type: action, name: 编辑字典条目, permission_code: dictionary.item.update, permission_scope: tenant, visible: false, sort_order: 16}
+      - {code: definitions.items-delete, parent: definitions, type: action, name: 删除字典条目, permission_code: dictionary.item.delete, permission_scope: tenant, visible: false, sort_order: 17}
+      - {code: definitions.publish, parent: definitions, type: action, name: 发布字典, permission_code: dictionary.definition.publish, permission_scope: tenant, visible: false, sort_order: 18}
+      - {code: definitions.query, parent: definitions, type: action, name: 查询字典数据, permission_code: dictionary.data.query, permission_scope: tenant, visible: false, sort_order: 19}
       - {code: providers, name: Provider 目录, route: providers, component: dictionary-center.providers, permission_code: dictionary.provider.list, permission_scope: platform, sort_order: 20}
 
   - code: registry-center
