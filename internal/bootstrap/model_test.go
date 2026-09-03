@@ -53,11 +53,11 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	if len(components) != 43 {
 		t.Fatalf("page components = %d, want 43", len(components))
 	}
-	if len(actionPermissions) != 123 {
-		t.Fatalf("action permissions = %d, want 123", len(actionPermissions))
+	if len(actionPermissions) != 125 {
+		t.Fatalf("action permissions = %d, want 125", len(actionPermissions))
 	}
-	if actionCount != 131 {
-		t.Fatalf("action nodes = %d, want 131", actionCount)
+	if actionCount != 133 {
+		t.Fatalf("action nodes = %d, want 133", actionCount)
 	}
 	if _, exists := actionPermissions["identity.user.update-profile"]; !exists {
 		t.Fatal("user profile update permission is missing")
@@ -76,5 +76,10 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	}
 	if _, exists := actionPermissions["workflow.definition.read"]; !exists {
 		t.Fatal("workflow definition read permission is missing")
+	}
+	for _, permission := range []string{"scheduler.job.read", "scheduler.execution.read"} {
+		if _, exists := actionPermissions[permission]; !exists {
+			t.Fatalf("scheduler detail permission %q is missing", permission)
+		}
 	}
 }
