@@ -53,11 +53,11 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	if len(components) != 43 {
 		t.Fatalf("page components = %d, want 43", len(components))
 	}
-	if len(actionPermissions) != 127 {
-		t.Fatalf("action permissions = %d, want 127", len(actionPermissions))
+	if len(actionPermissions) != 129 {
+		t.Fatalf("action permissions = %d, want 129", len(actionPermissions))
 	}
-	if actionCount != 135 {
-		t.Fatalf("action nodes = %d, want 135", actionCount)
+	if actionCount != 137 {
+		t.Fatalf("action nodes = %d, want 137", actionCount)
 	}
 	if _, exists := actionPermissions["identity.user.update-profile"]; !exists {
 		t.Fatal("user profile update permission is missing")
@@ -87,5 +87,10 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	}
 	if _, exists := actionPermissions["metering.meter.read"]; !exists {
 		t.Fatal("meter detail read permission is missing")
+	}
+	for _, permission := range []string{"billing.subscription.read", "billing.invoice.read"} {
+		if _, exists := actionPermissions[permission]; !exists {
+			t.Fatalf("billing detail permission %q is missing", permission)
+		}
 	}
 }
