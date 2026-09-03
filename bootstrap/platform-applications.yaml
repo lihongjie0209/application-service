@@ -110,9 +110,11 @@ applications:
     metadata: {owner: platform, category: integration}
     menus:
       - {code: templates, name: 通知模板, route: templates, component: notification-center.templates, permission_code: notification.template.list, permission_scope: tenant, sort_order: 10}
-      - {code: templates.update, parent: templates, type: action, name: 保存通知模板, permission_code: notification.template.update, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: templates.read, parent: templates, type: action, name: 查看通知模板, permission_code: notification.template.read, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: templates.update, parent: templates, type: action, name: 保存通知模板, permission_code: notification.template.update, permission_scope: tenant, visible: false, sort_order: 12}
       - {code: providers, name: 供应商路由, route: providers, component: notification-center.providers, permission_code: notification.provider.list, permission_scope: tenant, sort_order: 20}
-      - {code: providers.update, parent: providers, type: action, name: 保存供应商路由, permission_code: notification.provider.update, permission_scope: tenant, visible: false, sort_order: 21}
+      - {code: providers.read, parent: providers, type: action, name: 查看供应商路由, permission_code: notification.provider.read, permission_scope: tenant, visible: false, sort_order: 21}
+      - {code: providers.update, parent: providers, type: action, name: 保存供应商路由, permission_code: notification.provider.update, permission_scope: tenant, visible: false, sort_order: 22}
       - {code: deliveries, name: 投递记录, route: deliveries, component: notification-center.deliveries, permission_code: notification.delivery.list, permission_scope: tenant, sort_order: 30}
       - {code: deliveries.read, parent: deliveries, type: action, name: 查看投递详情, permission_code: notification.delivery.read, permission_scope: tenant, visible: false, sort_order: 31}
       - {code: deliveries.send, parent: deliveries, type: action, name: 发送通知, permission_code: notification.delivery.send, permission_scope: tenant, visible: false, sort_order: 32}

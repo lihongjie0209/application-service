@@ -53,11 +53,11 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	if len(components) != 43 {
 		t.Fatalf("page components = %d, want 43", len(components))
 	}
-	if len(actionPermissions) != 133 {
-		t.Fatalf("action permissions = %d, want 133", len(actionPermissions))
+	if len(actionPermissions) != 135 {
+		t.Fatalf("action permissions = %d, want 135", len(actionPermissions))
 	}
-	if actionCount != 141 {
-		t.Fatalf("action nodes = %d, want 141", actionCount)
+	if actionCount != 143 {
+		t.Fatalf("action nodes = %d, want 143", actionCount)
 	}
 	if _, exists := actionPermissions["identity.user.update-profile"]; !exists {
 		t.Fatal("user profile update permission is missing")
@@ -103,5 +103,10 @@ func TestDefaultPlatformManifestIsValid(t *testing.T) {
 	}
 	if _, exists := actionPermissions["config.entry.read"]; !exists {
 		t.Fatal("config entry read permission is missing")
+	}
+	for _, permission := range []string{"notification.provider.read", "notification.template.read"} {
+		if _, exists := actionPermissions[permission]; !exists {
+			t.Fatalf("notification detail permission %q is missing", permission)
+		}
 	}
 }
