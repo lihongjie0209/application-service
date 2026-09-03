@@ -112,6 +112,25 @@ definitions:
           $ref: '#/definitions/httptransport.NavigationResponse'
         type: array
     type: object
+  httptransport.BatchTenantGrantsRequest:
+    properties:
+      application_ids:
+        items:
+          type: string
+        type: array
+      tenant_id:
+        type: string
+    required:
+    - application_ids
+    - tenant_id
+    type: object
+  httptransport.BatchTenantGrantsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/httptransport.GrantBody'
+        type: array
+    type: object
   httptransport.CreateApplicationRequest:
     properties:
       code:
@@ -222,6 +241,8 @@ definitions:
     type: object
   httptransport.ListApplicationsRequest:
     properties:
+      keyword:
+        type: string
       page:
         type: integer
       page_size:
@@ -799,6 +820,34 @@ paths:
       security:
       - Bearer: []
       summary: List applications granted to a tenant
+      tags:
+      - tenant-applications
+  /api/v1/applications/tenant-grants/manage/batch-get:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Tenant and application IDs (maximum 100)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/httptransport.BatchTenantGrantsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httptransport.Response'
+            - properties:
+                body:
+                  $ref: '#/definitions/httptransport.BatchTenantGrantsResponse'
+              type: object
+      security:
+      - Bearer: []
+      summary: Get grant state for a bounded application set
       tags:
       - tenant-applications
   /api/v1/applications/tenant-grants/manage/list:

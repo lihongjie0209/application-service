@@ -16,6 +16,39 @@ type navigationRepository struct {
 	active map[string]bool
 }
 
+type applicationDirectoryRepository struct {
+	Repository
+	searchKeyword string
+	searchStatus  string
+	batchTenant   string
+	batchIDs      []string
+}
+
+func (r *applicationDirectoryRepository) SearchApplications(_ context.Context, keyword, status string, _, _ int) ([]Application, int64, error) {
+	r.searchKeyword, r.searchStatus = keyword, status
+	return []Application{{ID: "app-1"}}, 1, nil
+}
+
+func (r *applicationDirectoryRepository) BatchGrants(_ context.Context, tenantID string, ids []string) ([]Grant, error) {
+	r.batchTenant, r.batchIDs = tenantID, append([]string(nil), ids...)
+	return []Grant{{ID: "grant-1", TenantID: tenantID, ApplicationID: ids[0]}}, nil
+}
+
+func TestApplicationDirectoriesNormalizeSearchAndBatchIDs(t *testing.T) {
+	t.Parallel()
+	repository := &applicationDirectoryRepository{}
+	service := &Service{repository: repository, now: time.Now}
+	page, err := service.SearchApplications(t.Context(), " console ", "active", 1, 20)
+	if err != nil || len(page.Items) != 1 || repository.searchKeyword != "console" {
+		t.Fatalf("SearchApplications() = (%+v, %v), keyword=%q", page, err, repository.searchKeyword)
+	}
+	ctx := principal.WithContext(t.Context(), principal.Principal{ID: "service-1", Type: principal.TypeServiceAccount})
+	grants, err := service.BatchGrants(ctx, "tenant-1", []string{" app-1 ", "app-1"})
+	if err != nil || len(grants) != 1 || len(repository.batchIDs) != 1 || repository.batchIDs[0] != "app-1" {
+		t.Fatalf("BatchGrants() = (%+v, %v), ids=%v", grants, err, repository.batchIDs)
+	}
+}
+
 func (r navigationRepository) BatchActiveGrants(context.Context, string, []string, time.Time) (map[string]bool, error) {
 	return r.active, nil
 }

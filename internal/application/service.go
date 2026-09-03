@@ -124,6 +124,18 @@ func (s *Service) ListApplications(ctx context.Context, status string, page, pag
 	items, total, err := s.repository.ListApplications(ctx, status, pageSize, (page-1)*pageSize)
 	return Page[Application]{Items: items, Total: total, Page: page, PageSize: pageSize}, translate(err)
 }
+func (s *Service) SearchApplications(ctx context.Context, keyword, status string, page, pageSize int) (Page[Application], error) {
+	page, pageSize, err := pagination(page, pageSize)
+	if err != nil {
+		return Page[Application]{}, err
+	}
+	keyword, status = strings.TrimSpace(keyword), strings.TrimSpace(status)
+	if len(keyword) > 100 {
+		return Page[Application]{}, apperror.Invalid("application keyword must not exceed 100 bytes", nil)
+	}
+	items, total, err := s.repository.SearchApplications(ctx, keyword, status, pageSize, (page-1)*pageSize)
+	return Page[Application]{Items: items, Total: total, Page: page, PageSize: pageSize}, translate(err)
+}
 func (s *Service) UpsertMenu(ctx context.Context, v Menu, expected int64) (Menu, error) {
 	actor, err := actor(ctx)
 	if err != nil {
@@ -473,6 +485,17 @@ func (s *Service) BatchCheck(ctx context.Context, tenantID string, ids []string,
 	}
 	v, err := s.repository.BatchActiveGrants(ctx, tenantID, ids, at)
 	return v, translate(err)
+}
+func (s *Service) BatchGrants(ctx context.Context, tenantID string, applicationIDs []string) ([]Grant, error) {
+	if err := authorizeTenant(ctx, tenantID); err != nil {
+		return nil, err
+	}
+	ids, err := uniqueApplicationIDs(applicationIDs)
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.repository.BatchGrants(ctx, strings.TrimSpace(tenantID), ids)
+	return items, translate(err)
 }
 func (s *Service) validateMenu(ctx context.Context, v Menu, expected int64) (Menu, error) {
 	v.ApplicationID, v.ID, v.ParentID, v.Code, v.Type, v.Name, v.I18nKey, v.Route, v.Component, v.ExternalURL, v.PermissionCode, v.PermissionScope = strings.TrimSpace(v.ApplicationID), strings.TrimSpace(v.ID), strings.TrimSpace(v.ParentID), strings.TrimSpace(v.Code), strings.TrimSpace(v.Type), strings.TrimSpace(v.Name), strings.TrimSpace(v.I18nKey), strings.TrimSpace(v.Route), strings.TrimSpace(v.Component), strings.TrimSpace(v.ExternalURL), strings.ToLower(strings.TrimSpace(v.PermissionCode)), strings.ToLower(strings.TrimSpace(v.PermissionScope))

@@ -77,6 +77,7 @@ func NewServer(lc fx.Lifecycle, cfg config.Config, handler *Handler, authService
 	api.POST("/applications/tenant-grants/revoke", handler.Revoke)
 	api.POST("/applications/tenant-grants/list", handler.ListTenantApplications)
 	api.POST("/applications/tenant-grants/manage/list", handler.ListManagedTenantApplications)
+	api.POST("/applications/tenant-grants/manage/batch-get", handler.BatchManagedTenantGrants)
 	api.POST("/applications/tenant-grants/batch-check", handler.BatchCheck)
 	server := &http.Server{Addr: cfg.HTTP.Address, Handler: router, ReadTimeout: cfg.HTTP.ReadTimeout, WriteTimeout: cfg.HTTP.WriteTimeout, IdleTimeout: cfg.HTTP.IdleTimeout}
 	var listener net.Listener

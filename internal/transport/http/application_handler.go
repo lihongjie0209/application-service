@@ -36,9 +36,17 @@ type IDRequest struct {
 	ID string `json:"id" binding:"required"`
 }
 type ListApplicationsRequest struct {
+	Keyword  string `json:"keyword"`
 	Status   string `json:"status"`
 	Page     int    `json:"page"`
 	PageSize int    `json:"page_size"`
+}
+type BatchTenantGrantsRequest struct {
+	TenantID       string   `json:"tenant_id" binding:"required"`
+	ApplicationIDs []string `json:"application_ids" binding:"required"`
+}
+type BatchTenantGrantsResponse struct {
+	Items []GrantBody `json:"items"`
 }
 type UpsertMenuRequest struct {
 	Menu            MenuInputBody `json:"menu" binding:"required"`
@@ -191,8 +199,26 @@ func (h *Handler) ListApplications(c *gin.Context) {
 	if !bind(c, h.logger, &r) {
 		return
 	}
-	v, err := h.applications.ListApplications(c.Request.Context(), r.Status, r.Page, r.PageSize)
+	v, err := h.applications.SearchApplications(c.Request.Context(), r.Keyword, r.Status, r.Page, r.PageSize)
 	respond(c, h.logger, applicationPageBody(v), err)
+}
+
+// BatchManagedTenantGrants godoc
+// @Summary Get grant state for a bounded application set
+// @Tags tenant-applications
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body BatchTenantGrantsRequest true "Tenant and application IDs (maximum 100)"
+// @Success 200 {object} Response{body=BatchTenantGrantsResponse}
+// @Router /api/v1/applications/tenant-grants/manage/batch-get [post]
+func (h *Handler) BatchManagedTenantGrants(c *gin.Context) {
+	var request BatchTenantGrantsRequest
+	if !bind(c, h.logger, &request) {
+		return
+	}
+	items, err := h.applications.BatchGrants(c.Request.Context(), request.TenantID, request.ApplicationIDs)
+	respond(c, h.logger, BatchTenantGrantsResponse{Items: grantBodies(items)}, err)
 }
 
 // UpsertMenu godoc

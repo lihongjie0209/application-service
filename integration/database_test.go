@@ -77,6 +77,10 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			if err := repository.CreateApplication(ctx, db, application); err != nil {
 				t.Fatal(err)
 			}
+			searchedApplications, searchedTotal, err := repository.SearchApplications(ctx, "order", "active", 20, 0)
+			if err != nil || searchedTotal != 1 || len(searchedApplications) != 1 || searchedApplications[0].ID != application.ID {
+				t.Fatalf("SearchApplications() = (%+v, %d, %v)", searchedApplications, searchedTotal, err)
+			}
 			application.Name, application.UpdatedAt = "Order Center", now.Add(time.Second)
 			if err := repository.UpdateApplication(ctx, db, application, 1); err != nil {
 				t.Fatal(err)
@@ -103,6 +107,10 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			prioritizedGrant := applicationdomain.Grant{ID: "grant-2", TenantID: grant.TenantID, ApplicationID: prioritizedApplication.ID, Status: "active", ValidFrom: now, Source: "manual", EntitlementsJSON: "{}", Version: 1, CreatedAt: now.Add(-time.Second), UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
 			if err := repository.CreateGrant(ctx, db, prioritizedGrant); err != nil {
 				t.Fatal(err)
+			}
+			grantBatch, err := repository.BatchGrants(ctx, grant.TenantID, []string{application.ID, "missing-app"})
+			if err != nil || len(grantBatch) != 1 || grantBatch[0].ID != grant.ID {
+				t.Fatalf("BatchGrants() = (%+v, %v)", grantBatch, err)
 			}
 			grants, applications, total, err := repository.ListGrants(ctx, grant.TenantID, true, now.Add(time.Second), 100, 0)
 			if err != nil {

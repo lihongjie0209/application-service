@@ -18,6 +18,7 @@ type Repository interface {
 	UpdateApplication(context.Context, sqlx.ExtContext, Application, int64) error
 	GetApplication(context.Context, string) (Application, error)
 	ListApplications(context.Context, string, int, int) ([]Application, int64, error)
+	SearchApplications(context.Context, string, string, int, int) ([]Application, int64, error)
 	GetMenu(context.Context, string) (Menu, error)
 	UpsertMenu(context.Context, sqlx.ExtContext, Menu, int64) error
 	DeleteMenu(context.Context, sqlx.ExtContext, string, int64, time.Time, string) error
@@ -31,6 +32,7 @@ type Repository interface {
 	ListGrants(context.Context, string, bool, time.Time, int, int) ([]Grant, []Application, int64, error)
 	ListActiveGrantsByApplication(context.Context, sqlx.ExtContext, string, time.Time) ([]Grant, error)
 	BatchActiveGrants(context.Context, string, []string, time.Time) (map[string]bool, error)
+	BatchGrants(context.Context, string, []string) ([]Grant, error)
 	AddOutbox(context.Context, sqlx.ExtContext, OutboxEvent) error
 }
 type SQLRepository struct{ db *sqlx.DB }
@@ -71,6 +73,27 @@ func (r *SQLRepository) ListApplications(ctx context.Context, status string, lim
 	args = append(args, limit, offset)
 	items := []Application{}
 	err := r.db.SelectContext(ctx, &items, r.db.Rebind(`SELECT `+applicationColumns+` FROM applications WHERE `+where+` ORDER BY sort_order,id LIMIT ? OFFSET ?`), args...)
+	return items, total, err
+}
+func (r *SQLRepository) SearchApplications(ctx context.Context, keyword, status string, limit, offset int) ([]Application, int64, error) {
+	where := `1=1`
+	args := []any{}
+	if status != "" {
+		where += ` AND status=?`
+		args = append(args, status)
+	}
+	if keyword != "" {
+		where += ` AND (LOWER(code) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?))`
+		pattern := "%" + keyword + "%"
+		args = append(args, pattern, pattern)
+	}
+	var total int64
+	if err := r.db.GetContext(ctx, &total, r.db.Rebind(`SELECT COUNT(*) FROM applications WHERE `+where), args...); err != nil {
+		return nil, 0, err
+	}
+	queryArgs := append(append([]any(nil), args...), limit, offset)
+	items := []Application{}
+	err := r.db.SelectContext(ctx, &items, r.db.Rebind(`SELECT `+applicationColumns+` FROM applications WHERE `+where+` ORDER BY sort_order,id LIMIT ? OFFSET ?`), queryArgs...)
 	return items, total, err
 }
 func (r *SQLRepository) GetMenu(ctx context.Context, id string) (Menu, error) {
@@ -188,6 +211,16 @@ func (r *SQLRepository) ListGrants(ctx context.Context, tenantID string, active 
 		apps = append(apps, app)
 	}
 	return grants, apps, total, nil
+}
+
+func (r *SQLRepository) BatchGrants(ctx context.Context, tenantID string, applicationIDs []string) ([]Grant, error) {
+	query, args, err := sqlx.In(`SELECT `+grantColumns+` FROM tenant_application_grants WHERE tenant_id=? AND application_id IN (?) ORDER BY id`, tenantID, applicationIDs)
+	if err != nil {
+		return nil, err
+	}
+	items := []Grant{}
+	err = r.db.SelectContext(ctx, &items, r.db.Rebind(query), args...)
+	return items, err
 }
 func (r *SQLRepository) ListActiveGrantsByApplication(ctx context.Context, e sqlx.ExtContext, appID string, at time.Time) ([]Grant, error) {
 	items := []Grant{}

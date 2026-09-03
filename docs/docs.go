@@ -615,6 +615,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/applications/tenant-grants/manage/batch-get": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tenant-applications"
+                ],
+                "summary": "Get grant state for a bounded application set",
+                "parameters": [
+                    {
+                        "description": "Tenant and application IDs (maximum 100)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httptransport.BatchTenantGrantsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httptransport.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "body": {
+                                            "$ref": "#/definitions/httptransport.BatchTenantGrantsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/applications/tenant-grants/manage/list": {
             "post": {
                 "security": [
@@ -1098,6 +1148,35 @@ const docTemplate = `{
                 }
             }
         },
+        "httptransport.BatchTenantGrantsRequest": {
+            "type": "object",
+            "required": [
+                "application_ids",
+                "tenant_id"
+            ],
+            "properties": {
+                "application_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tenant_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "httptransport.BatchTenantGrantsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httptransport.GrantBody"
+                    }
+                }
+            }
+        },
         "httptransport.CreateApplicationRequest": {
             "type": "object",
             "required": [
@@ -1265,6 +1344,9 @@ const docTemplate = `{
         "httptransport.ListApplicationsRequest": {
             "type": "object",
             "properties": {
+                "keyword": {
+                    "type": "string"
+                },
                 "page": {
                     "type": "integer"
                 },
