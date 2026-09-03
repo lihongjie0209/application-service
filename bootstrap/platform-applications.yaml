@@ -194,10 +194,11 @@ applications:
     metadata: {owner: platform, category: automation}
     menus:
       - {code: definitions, name: 流程定义, route: definitions, component: workflow-center.definitions, permission_code: workflow.definition.list, permission_scope: tenant, sort_order: 10}
-      - {code: definitions.create, parent: definitions, type: action, name: 创建流程定义, permission_code: workflow.definition.create, permission_scope: tenant, visible: false, sort_order: 11}
-      - {code: definitions.update, parent: definitions, type: action, name: 编辑流程定义, permission_code: workflow.definition.update, permission_scope: tenant, visible: false, sort_order: 12}
-      - {code: definitions.publish, parent: definitions, type: action, name: 发布流程定义, permission_code: workflow.definition.publish, permission_scope: tenant, visible: false, sort_order: 13}
-      - {code: definitions.disable, parent: definitions, type: action, name: 停用流程定义, permission_code: workflow.definition.disable, permission_scope: tenant, visible: false, sort_order: 14}
+      - {code: definitions.read, parent: definitions, type: action, name: 查看流程定义, permission_code: workflow.definition.read, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: definitions.create, parent: definitions, type: action, name: 创建流程定义, permission_code: workflow.definition.create, permission_scope: tenant, visible: false, sort_order: 12}
+      - {code: definitions.update, parent: definitions, type: action, name: 编辑流程定义, permission_code: workflow.definition.update, permission_scope: tenant, visible: false, sort_order: 13}
+      - {code: definitions.publish, parent: definitions, type: action, name: 发布流程定义, permission_code: workflow.definition.publish, permission_scope: tenant, visible: false, sort_order: 14}
+      - {code: definitions.disable, parent: definitions, type: action, name: 停用流程定义, permission_code: workflow.definition.disable, permission_scope: tenant, visible: false, sort_order: 15}
       - {code: instances, name: 流程实例, route: instances, component: workflow-center.instances, permission_code: workflow.instance.list, permission_scope: tenant, sort_order: 20}
       - {code: instances.start, parent: instances, type: action, name: 启动流程实例, permission_code: workflow.instance.start, permission_scope: tenant, visible: false, sort_order: 21}
       - {code: instances.cancel, parent: instances, type: action, name: 取消流程实例, permission_code: workflow.instance.cancel, permission_scope: tenant, visible: false, sort_order: 22}
