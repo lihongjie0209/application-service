@@ -93,12 +93,13 @@ applications:
     metadata: {owner: platform, category: data}
     menus:
       - {code: entries, name: 配置项, route: entries, component: config-center.entries, permission_code: config.entry.list, permission_scope: tenant, sort_order: 10}
-      - {code: entries.update, parent: entries, type: action, name: 保存配置草稿, permission_code: config.entry.update, permission_scope: tenant, visible: false, sort_order: 11}
-      - {code: entries.submit, parent: entries, type: action, name: 提交配置审批, permission_code: config.entry.submit, permission_scope: tenant, visible: false, sort_order: 12}
-      - {code: entries.approve, parent: entries, type: action, name: 通过配置审批, permission_code: config.entry.approve, permission_scope: tenant, visible: false, sort_order: 13}
-      - {code: entries.reject, parent: entries, type: action, name: 驳回配置审批, permission_code: config.entry.reject, permission_scope: tenant, visible: false, sort_order: 14}
-      - {code: entries.publish, parent: entries, type: action, name: 发布配置, permission_code: config.entry.publish, permission_scope: tenant, visible: false, sort_order: 15}
-      - {code: entries.rollback, parent: entries, type: action, name: 回滚配置, permission_code: config.entry.rollback, permission_scope: tenant, visible: false, sort_order: 16}
+      - {code: entries.read, parent: entries, type: action, name: 查看配置详情, permission_code: config.entry.read, permission_scope: tenant, visible: false, sort_order: 11}
+      - {code: entries.update, parent: entries, type: action, name: 保存配置草稿, permission_code: config.entry.update, permission_scope: tenant, visible: false, sort_order: 12}
+      - {code: entries.submit, parent: entries, type: action, name: 提交配置审批, permission_code: config.entry.submit, permission_scope: tenant, visible: false, sort_order: 13}
+      - {code: entries.approve, parent: entries, type: action, name: 通过配置审批, permission_code: config.entry.approve, permission_scope: tenant, visible: false, sort_order: 14}
+      - {code: entries.reject, parent: entries, type: action, name: 驳回配置审批, permission_code: config.entry.reject, permission_scope: tenant, visible: false, sort_order: 15}
+      - {code: entries.publish, parent: entries, type: action, name: 发布配置, permission_code: config.entry.publish, permission_scope: tenant, visible: false, sort_order: 16}
+      - {code: entries.rollback, parent: entries, type: action, name: 回滚配置, permission_code: config.entry.rollback, permission_scope: tenant, visible: false, sort_order: 17}
 
   - code: notification-center
     name: 通知中心
