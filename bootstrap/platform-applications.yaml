@@ -41,15 +41,17 @@ applications:
       - {code: quotas, name: 租户配额, route: quotas, component: platform-admin.quotas, permission_code: tenant.quota.list, permission_scope: tenant, sort_order: 100}
       - {code: quotas.update, parent: quotas, type: action, name: 设置配额, permission_code: tenant.quota.update, permission_scope: tenant, visible: false, sort_order: 102}
       - {code: users, name: 用户管理, route: users, component: platform-admin.users, permission_code: identity.user.list, permission_scope: platform, sort_order: 110}
-      - {code: users.create, parent: users, type: action, name: 创建用户, permission_code: identity.user.create, permission_scope: platform, visible: false, sort_order: 111}
-      - {code: users.update-profile, parent: users, type: action, name: 编辑用户资料, permission_code: identity.user.update-profile, permission_scope: platform, visible: false, sort_order: 112}
-      - {code: users.update-status, parent: users, type: action, name: 更新用户状态, permission_code: identity.user.update-status, permission_scope: platform, visible: false, sort_order: 113}
-      - {code: users.password-reset, parent: users, type: action, name: 签发密码重置, permission_code: identity.user.password-reset, permission_scope: platform, visible: false, sort_order: 114}
-      - {code: users.mfa-reset, parent: users, type: action, name: 重置用户 MFA, permission_code: identity.user.mfa-reset, permission_scope: platform, visible: false, sort_order: 115}
+      - {code: users.read, parent: users, type: action, name: 查看用户详情, permission_code: identity.user.read, permission_scope: platform, visible: false, sort_order: 111}
+      - {code: users.create, parent: users, type: action, name: 创建用户, permission_code: identity.user.create, permission_scope: platform, visible: false, sort_order: 112}
+      - {code: users.update-profile, parent: users, type: action, name: 编辑用户资料, permission_code: identity.user.update-profile, permission_scope: platform, visible: false, sort_order: 113}
+      - {code: users.update-status, parent: users, type: action, name: 更新用户状态, permission_code: identity.user.update-status, permission_scope: platform, visible: false, sort_order: 114}
+      - {code: users.password-reset, parent: users, type: action, name: 签发密码重置, permission_code: identity.user.password-reset, permission_scope: platform, visible: false, sort_order: 115}
+      - {code: users.mfa-reset, parent: users, type: action, name: 重置用户 MFA, permission_code: identity.user.mfa-reset, permission_scope: platform, visible: false, sort_order: 116}
       - {code: service-accounts, name: 服务账号, route: service-accounts, component: platform-admin.service-accounts, permission_code: identity.service-account.list, permission_scope: platform, sort_order: 120}
-      - {code: service-accounts.create, parent: service-accounts, type: action, name: 创建服务账号, permission_code: identity.service-account.create, permission_scope: platform, visible: false, sort_order: 121}
-      - {code: service-accounts.update-status, parent: service-accounts, type: action, name: 更新服务账号状态, permission_code: identity.service-account.update-status, permission_scope: platform, visible: false, sort_order: 122}
-      - {code: service-accounts.rotate-secret, parent: service-accounts, type: action, name: 轮换服务账号密钥, permission_code: identity.service-account.rotate-secret, permission_scope: platform, visible: false, sort_order: 123}
+      - {code: service-accounts.read, parent: service-accounts, type: action, name: 查看服务账号详情, permission_code: identity.service-account.read, permission_scope: platform, visible: false, sort_order: 121}
+      - {code: service-accounts.create, parent: service-accounts, type: action, name: 创建服务账号, permission_code: identity.service-account.create, permission_scope: platform, visible: false, sort_order: 122}
+      - {code: service-accounts.update-status, parent: service-accounts, type: action, name: 更新服务账号状态, permission_code: identity.service-account.update-status, permission_scope: platform, visible: false, sort_order: 123}
+      - {code: service-accounts.rotate-secret, parent: service-accounts, type: action, name: 轮换服务账号密钥, permission_code: identity.service-account.rotate-secret, permission_scope: platform, visible: false, sort_order: 124}
       - {code: sessions, name: 会话管理, route: sessions, component: platform-admin.sessions, permission_code: identity.session.list, permission_scope: platform, sort_order: 130}
       - {code: sessions.revoke, parent: sessions, type: action, name: 撤销会话, permission_code: identity.session.revoke, permission_scope: platform, visible: false, sort_order: 131}
       - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, permission_code: authorization.role.list, permission_scope: tenant, sort_order: 140}
