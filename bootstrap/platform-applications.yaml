@@ -279,8 +279,9 @@ applications:
       - {code: invoices.finalize, parent: invoices, type: action, name: 确认账单, permission_code: billing.invoice.finalize, permission_scope: tenant, visible: false, sort_order: 32}
       - {code: invoices.void, parent: invoices, type: action, name: 作废账单, permission_code: billing.invoice.void, permission_scope: tenant, visible: false, sort_order: 33}
       - {code: payments, name: 支付与退款, route: payments, component: billing-center.payments, permission_code: billing.payment.list, permission_scope: tenant, sort_order: 40}
-      - {code: payments.create, parent: payments, type: action, name: 发起支付, permission_code: billing.payment.create, permission_scope: tenant, visible: false, sort_order: 41}
-      - {code: payments.refund, parent: payments, type: action, name: 记录退款, permission_code: billing.payment.refund, permission_scope: tenant, visible: false, sort_order: 42}
+      - {code: payments.read, parent: payments, type: action, name: 查看支付详情, permission_code: billing.payment.read, permission_scope: tenant, visible: false, sort_order: 41}
+      - {code: payments.create, parent: payments, type: action, name: 发起支付, permission_code: billing.payment.create, permission_scope: tenant, visible: false, sort_order: 42}
+      - {code: payments.refund, parent: payments, type: action, name: 记录退款, permission_code: billing.payment.refund, permission_scope: tenant, visible: false, sort_order: 43}
 
   - code: rule-center
     name: 规则中心
