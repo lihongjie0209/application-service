@@ -12,12 +12,14 @@ applications:
       - {code: applications.create, parent: applications, type: action, name: 创建应用, permission_code: application.catalog.create, permission_scope: platform, visible: false, sort_order: 12}
       - {code: applications.update, parent: applications, type: action, name: 编辑应用, permission_code: application.catalog.update, permission_scope: platform, visible: false, sort_order: 13}
       - {code: menus, name: 菜单管理, route: menus, component: platform-admin.menus, permission_code: application.menu.list, permission_scope: platform, sort_order: 20}
-      - {code: menus.update, parent: menus, type: action, name: 编辑菜单, permission_code: application.menu.update, permission_scope: platform, visible: false, sort_order: 21}
-      - {code: menus.delete, parent: menus, type: action, name: 删除菜单, permission_code: application.menu.delete, permission_scope: platform, visible: false, sort_order: 22}
-      - {code: menus.publish, parent: menus, type: action, name: 发布菜单, permission_code: application.menu.publish, permission_scope: platform, visible: false, sort_order: 23}
+      - {code: menus.read, parent: menus, type: action, name: 查看菜单详情, permission_code: application.menu.read, permission_scope: platform, visible: false, sort_order: 21}
+      - {code: menus.update, parent: menus, type: action, name: 编辑菜单, permission_code: application.menu.update, permission_scope: platform, visible: false, sort_order: 22}
+      - {code: menus.delete, parent: menus, type: action, name: 删除菜单, permission_code: application.menu.delete, permission_scope: platform, visible: false, sort_order: 23}
+      - {code: menus.publish, parent: menus, type: action, name: 发布菜单, permission_code: application.menu.publish, permission_scope: platform, visible: false, sort_order: 24}
       - {code: application-grants, name: 应用授权, route: application-grants, component: platform-admin.application-grants, permission_code: application.grant.list, permission_scope: platform, sort_order: 30}
-      - {code: application-grants.grant, parent: application-grants, type: action, name: 授权应用, permission_code: application.grant.grant, permission_scope: platform, visible: false, sort_order: 31}
-      - {code: application-grants.revoke, parent: application-grants, type: action, name: 撤销应用授权, permission_code: application.grant.revoke, permission_scope: platform, visible: false, sort_order: 32}
+      - {code: application-grants.read, parent: application-grants, type: action, name: 查看应用授权详情, permission_code: application.grant.read, permission_scope: platform, visible: false, sort_order: 31}
+      - {code: application-grants.grant, parent: application-grants, type: action, name: 授权应用, permission_code: application.grant.grant, permission_scope: platform, visible: false, sort_order: 32}
+      - {code: application-grants.revoke, parent: application-grants, type: action, name: 撤销应用授权, permission_code: application.grant.revoke, permission_scope: platform, visible: false, sort_order: 33}
       - {code: tenants, name: 租户管理, route: tenants, component: platform-admin.tenants, permission_code: tenant.profile.list, permission_scope: platform, sort_order: 40}
       - {code: tenants.read, parent: tenants, type: action, name: 查看租户详情, permission_code: tenant.profile.read, permission_scope: platform, visible: false, sort_order: 41}
       - {code: tenants.create, parent: tenants, type: action, name: 创建租户, permission_code: tenant.profile.create, permission_scope: platform, visible: false, sort_order: 42}
