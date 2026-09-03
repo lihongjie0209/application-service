@@ -29,15 +29,17 @@ applications:
       - {code: organization-units.create, parent: organization-units, type: action, name: 创建组织节点, permission_code: tenant.organization-unit.create, permission_scope: tenant, visible: false, sort_order: 52}
       - {code: organization-units.update, parent: organization-units, type: action, name: 编辑组织节点, permission_code: tenant.organization-unit.update, permission_scope: tenant, visible: false, sort_order: 53}
       - {code: memberships, name: 成员管理, route: memberships, component: platform-admin.memberships, permission_code: tenant.membership.list, permission_scope: tenant, sort_order: 60}
-      - {code: memberships.create, parent: memberships, type: action, name: 添加成员, permission_code: tenant.membership.create, permission_scope: tenant, visible: false, sort_order: 61}
-      - {code: memberships.update, parent: memberships, type: action, name: 编辑成员, permission_code: tenant.membership.update, permission_scope: tenant, visible: false, sort_order: 62}
+      - {code: memberships.read, parent: memberships, type: action, name: 查看成员详情, permission_code: tenant.membership.read, permission_scope: tenant, visible: false, sort_order: 61}
+      - {code: memberships.create, parent: memberships, type: action, name: 添加成员, permission_code: tenant.membership.create, permission_scope: tenant, visible: false, sort_order: 62}
+      - {code: memberships.update, parent: memberships, type: action, name: 编辑成员, permission_code: tenant.membership.update, permission_scope: tenant, visible: false, sort_order: 63}
       - {code: invitations, name: 邀请管理, route: invitations, component: platform-admin.invitations, permission_code: tenant.invitation.list, permission_scope: tenant, sort_order: 70}
       - {code: invitations.read, parent: invitations, type: action, name: 查看邀请详情, permission_code: tenant.invitation.read, permission_scope: tenant, visible: false, sort_order: 71}
       - {code: invitations.create, parent: invitations, type: action, name: 创建邀请, permission_code: tenant.invitation.create, permission_scope: tenant, visible: false, sort_order: 72}
       - {code: invitations.revoke, parent: invitations, type: action, name: 撤销邀请, permission_code: tenant.invitation.revoke, permission_scope: tenant, visible: false, sort_order: 73}
       - {code: groups, name: 用户组, route: groups, component: platform-admin.groups, permission_code: tenant.group.list, permission_scope: tenant, sort_order: 80}
-      - {code: groups.create, parent: groups, type: action, name: 创建用户组, permission_code: tenant.group.create, permission_scope: tenant, visible: false, sort_order: 81}
-      - {code: groups.update, parent: groups, type: action, name: 编辑用户组, permission_code: tenant.group.update, permission_scope: tenant, visible: false, sort_order: 82}
+      - {code: groups.read, parent: groups, type: action, name: 查看用户组详情, permission_code: tenant.group.read, permission_scope: tenant, visible: false, sort_order: 81}
+      - {code: groups.create, parent: groups, type: action, name: 创建用户组, permission_code: tenant.group.create, permission_scope: tenant, visible: false, sort_order: 82}
+      - {code: groups.update, parent: groups, type: action, name: 编辑用户组, permission_code: tenant.group.update, permission_scope: tenant, visible: false, sort_order: 83}
       - {code: group-members, name: 用户组成员, route: group-members, component: platform-admin.group-members, permission_code: tenant.group.list-members, permission_scope: tenant, sort_order: 90}
       - {code: group-members.read, parent: group-members, type: action, name: 查看组成员关系, permission_code: tenant.group.read-member, permission_scope: tenant, visible: false, sort_order: 91}
       - {code: group-members.add, parent: group-members, type: action, name: 添加组成员, permission_code: tenant.group.add-member, permission_scope: tenant, visible: false, sort_order: 92}
@@ -61,15 +63,19 @@ applications:
       - {code: sessions.read, parent: sessions, type: action, name: 查看会话详情, permission_code: identity.session.read, permission_scope: platform, visible: false, sort_order: 131}
       - {code: sessions.revoke, parent: sessions, type: action, name: 撤销会话, permission_code: identity.session.revoke, permission_scope: platform, visible: false, sort_order: 132}
       - {code: roles, name: 角色管理, route: roles, component: platform-admin.roles, permission_code: authorization.role.list, permission_scope: tenant, sort_order: 140}
-      - {code: roles.create, parent: roles, type: action, name: 创建角色, permission_code: authorization.role.create, permission_scope: tenant, visible: false, sort_order: 141}
-      - {code: roles.update, parent: roles, type: action, name: 编辑角色, permission_code: authorization.role.update, permission_scope: tenant, visible: false, sort_order: 142}
-      - {code: roles.platform-create, parent: roles, type: action, name: 创建平台角色, permission_code: authorization.role.create, permission_scope: platform, visible: false, sort_order: 143}
-      - {code: roles.platform-update, parent: roles, type: action, name: 编辑平台角色, permission_code: authorization.role.update, permission_scope: platform, visible: false, sort_order: 144}
+      - {code: roles.read, parent: roles, type: action, name: 查看角色详情, permission_code: authorization.role.read, permission_scope: tenant, visible: false, sort_order: 141}
+      - {code: roles.create, parent: roles, type: action, name: 创建角色, permission_code: authorization.role.create, permission_scope: tenant, visible: false, sort_order: 142}
+      - {code: roles.update, parent: roles, type: action, name: 编辑角色, permission_code: authorization.role.update, permission_scope: tenant, visible: false, sort_order: 143}
+      - {code: roles.platform-read, parent: roles, type: action, name: 查看平台角色详情, permission_code: authorization.role.read, permission_scope: platform, visible: false, sort_order: 144}
+      - {code: roles.platform-create, parent: roles, type: action, name: 创建平台角色, permission_code: authorization.role.create, permission_scope: platform, visible: false, sort_order: 145}
+      - {code: roles.platform-update, parent: roles, type: action, name: 编辑平台角色, permission_code: authorization.role.update, permission_scope: platform, visible: false, sort_order: 146}
       - {code: permissions, name: 权限管理, route: permissions, component: platform-admin.permissions, permission_code: authorization.permission.list, permission_scope: tenant, sort_order: 150}
-      - {code: permissions.create, parent: permissions, type: action, name: 创建权限, permission_code: authorization.permission.create, permission_scope: tenant, visible: false, sort_order: 151}
-      - {code: permissions.update, parent: permissions, type: action, name: 编辑权限, permission_code: authorization.permission.update, permission_scope: tenant, visible: false, sort_order: 152}
-      - {code: permissions.platform-create, parent: permissions, type: action, name: 创建平台权限, permission_code: authorization.permission.create, permission_scope: platform, visible: false, sort_order: 153}
-      - {code: permissions.platform-update, parent: permissions, type: action, name: 编辑平台权限, permission_code: authorization.permission.update, permission_scope: platform, visible: false, sort_order: 154}
+      - {code: permissions.read, parent: permissions, type: action, name: 查看权限详情, permission_code: authorization.permission.read, permission_scope: tenant, visible: false, sort_order: 151}
+      - {code: permissions.create, parent: permissions, type: action, name: 创建权限, permission_code: authorization.permission.create, permission_scope: tenant, visible: false, sort_order: 152}
+      - {code: permissions.update, parent: permissions, type: action, name: 编辑权限, permission_code: authorization.permission.update, permission_scope: tenant, visible: false, sort_order: 153}
+      - {code: permissions.platform-read, parent: permissions, type: action, name: 查看平台权限详情, permission_code: authorization.permission.read, permission_scope: platform, visible: false, sort_order: 154}
+      - {code: permissions.platform-create, parent: permissions, type: action, name: 创建平台权限, permission_code: authorization.permission.create, permission_scope: platform, visible: false, sort_order: 155}
+      - {code: permissions.platform-update, parent: permissions, type: action, name: 编辑平台权限, permission_code: authorization.permission.update, permission_scope: platform, visible: false, sort_order: 156}
       - {code: role-permissions, name: 角色权限, route: role-permissions, component: platform-admin.role-permissions, permission_code: authorization.role-permission.list, permission_scope: tenant, sort_order: 160}
       - {code: role-permissions.grant, parent: role-permissions, type: action, name: 授予角色权限, permission_code: authorization.role-permission.grant, permission_scope: tenant, visible: false, sort_order: 161}
       - {code: role-permissions.revoke, parent: role-permissions, type: action, name: 撤销角色权限, permission_code: authorization.role-permission.revoke, permission_scope: tenant, visible: false, sort_order: 162}
