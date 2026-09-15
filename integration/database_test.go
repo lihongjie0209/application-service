@@ -150,7 +150,7 @@ func TestRepositoryAndMigrations(t *testing.T) {
 				t.Fatalf("tenant applications are not ordered by application sort order: grants=%v applications=%v", grants, applications)
 			}
 			createdFrom, createdTo := now.Add(-time.Minute), now.Add(time.Minute)
-			filteredApplications, filteredTotal, err := repository.PageApplications(ctx, applicationdomain.ApplicationFilter{Keyword: "console", Status: "active", IDs: []string{application.ID}, CreatedFrom: &createdFrom, CreatedTo: &createdTo}, 20, 0)
+			filteredApplications, filteredTotal, err := repository.PageApplications(ctx, applicationdomain.ApplicationFilter{Keyword: "order", Status: "active", IDs: []string{application.ID}, CreatedFrom: &createdFrom, CreatedTo: &createdTo}, 20, 0)
 			if err != nil || filteredTotal != 1 || len(filteredApplications) != 1 || filteredApplications[0].ID != application.ID {
 				t.Fatalf("PageApplications() = (%+v, %d, %v)", filteredApplications, filteredTotal, err)
 			}
