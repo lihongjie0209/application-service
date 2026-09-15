@@ -151,6 +151,19 @@ event_bus:
   cleanup_interval: 1h
   cleanup_batch_size: 1000
 
+operation_log:
+  enabled: false
+  subject: platform.operation-log.recorded.v1
+  max_payload_bytes: 16384
+
+security_log:
+  enabled: false
+  subject: platform.security-log.recorded.v1
+  max_payload_bytes: 16384
+  # Inject with APP_SECURITY_LOG_HASH_KEY; never commit a real key.
+  hash_key: ""
+  fail_closed: true
+
 # Named outbound clients. Put environment-specific endpoints and credentials in
 # config-{env}.yaml or APP_ variables.
 outbound:

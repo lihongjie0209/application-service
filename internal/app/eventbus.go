@@ -10,7 +10,10 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lihongjie0209/application-service/internal/config"
 	"github.com/lihongjie0209/microservice-platform-go/eventbus"
+	"github.com/lihongjie0209/microservice-platform-go/operationlog"
 	platformoutbox "github.com/lihongjie0209/microservice-platform-go/outbox"
+	"github.com/lihongjie0209/microservice-platform-go/securitylog"
+	commonv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/common/v1"
 	"go.uber.org/fx"
 )
 
@@ -95,6 +98,18 @@ func (r *applicationEventRuntime) stop(context.Context) error {
 	}
 	return nil
 }
+func (r *applicationEventRuntime) Publish(ctx context.Context, subject string, envelope *commonv1.EventEnvelope) error {
+	if r == nil || r.bus == nil {
+		return errors.New("application event bus is unavailable")
+	}
+	return r.bus.Publish(ctx, subject, envelope)
+}
+func newOperationLogRecorder(cfg config.Config, publisher *applicationEventRuntime) (operationlog.Recorder, error) {
+	return operationlog.New(operationlog.Config{Enabled: cfg.OperationLog.Enabled, Subject: cfg.OperationLog.Subject, MaxPayloadBytes: cfg.OperationLog.MaxPayloadBytes}, publisher)
+}
+func newSecurityLogRecorder(cfg config.Config, publisher *applicationEventRuntime) (securitylog.Recorder, error) {
+	return securitylog.New(securitylog.Config{Enabled: cfg.SecurityLog.Enabled, Subject: cfg.SecurityLog.Subject, MaxPayloadBytes: cfg.SecurityLog.MaxPayloadBytes, HashKey: cfg.SecurityLog.HashKey, FailClosed: cfg.SecurityLog.FailClosed}, publisher)
+}
 func newApplicationOutboxStore(db *sqlx.DB) (*platformoutbox.SQLStore, error) {
 	if db == nil {
 		return nil, nil
@@ -102,4 +117,4 @@ func newApplicationOutboxStore(db *sqlx.DB) (*platformoutbox.SQLStore, error) {
 	return platformoutbox.NewSQLStore(db, "application_outbox_events", platformoutbox.WithWorkerAuditActor("application-service:outbox"))
 }
 
-var EventBusModule = fx.Module("application-event-bus", fx.Provide(newApplicationOutboxStore, newApplicationEventRuntime), fx.Invoke(func(*applicationEventRuntime) {}))
+var EventBusModule = fx.Module("application-event-bus", fx.Provide(newApplicationOutboxStore, newApplicationEventRuntime, newOperationLogRecorder, newSecurityLogRecorder), fx.Invoke(func(*applicationEventRuntime) {}))

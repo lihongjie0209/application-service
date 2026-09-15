@@ -68,6 +68,12 @@ event_bus:
   urls: []
   stream_name: PLATFORM_EVENTS
   subjects: [platform.>]
+operation_log:
+  enabled: true
+security_log:
+  enabled: true
+  hash_key: ""
+  fail_closed: true
 observability:
   metrics_enabled: true
   tracing_enabled: false

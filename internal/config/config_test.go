@@ -195,3 +195,23 @@ func TestConfigRejectsInvalidOutboxCleanup(t *testing.T) {
 		}
 	}
 }
+
+func TestConfigAuditEventDependencies(t *testing.T) {
+	cfg, err := LoadWithProfile("../../config/config.yaml", "development")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.OperationLog.Enabled = true
+	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "requires event_bus") {
+		t.Fatalf("Validate() error = %v, want event bus requirement", err)
+	}
+	cfg.EventBus.Enabled = true
+	cfg.SecurityLog.Enabled = true
+	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "hash_key") {
+		t.Fatalf("Validate() error = %v, want security hash key requirement", err)
+	}
+	cfg.SecurityLog.HashKey = strings.Repeat("k", 32)
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+}

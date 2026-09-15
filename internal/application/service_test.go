@@ -3,13 +3,64 @@ package application
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/lihongjie0209/application-service/internal/apperror"
+	"github.com/lihongjie0209/microservice-platform-go/operationlog"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
+	"github.com/lihongjie0209/microservice-platform-go/securitylog"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 )
+
+type operationRecorderStub struct {
+	entry operationlog.Entry
+	err   error
+}
+
+func (r *operationRecorderStub) Enabled() bool { return true }
+func (r *operationRecorderStub) Record(_ context.Context, entry operationlog.Entry) error {
+	r.entry = entry
+	return r.err
+}
+
+type securityRecorderStub struct {
+	entry      securitylog.Entry
+	err        error
+	failClosed bool
+}
+
+func (r *securityRecorderStub) Enabled() bool    { return true }
+func (r *securityRecorderStub) FailClosed() bool { return r.failClosed }
+func (r *securityRecorderStub) Record(_ context.Context, entry securitylog.Entry) error {
+	r.entry = entry
+	return r.err
+}
+
+func TestTenantGrantMutationRecordsOperationAndSecurityEvents(t *testing.T) {
+	operations := &operationRecorderStub{}
+	security := &securityRecorderStub{}
+	service := &Service{operations: operations, security: security, logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	grant := Grant{ID: "grant-1", TenantID: "tenant-1", ApplicationID: "app-1"}
+
+	if err := service.recordMutation(t.Context(), "application.tenant-grant.grant", grant, 2, nil); err != nil {
+		t.Fatal(err)
+	}
+	if operations.entry.ResourceID != grant.ID || !operations.entry.Succeeded || security.entry.EventType != securitylog.EventTenantApplicationGrant || security.entry.TenantID != grant.TenantID {
+		t.Fatalf("operation=%+v security=%+v", operations.entry, security.entry)
+	}
+}
+
+func TestTenantGrantMutationFailsClosedWhenSecurityEventCannotPublish(t *testing.T) {
+	security := &securityRecorderStub{err: errors.New("unavailable"), failClosed: true}
+	service := &Service{security: security, logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	err := service.recordMutation(t.Context(), "application.tenant-grant.revoke", Grant{ID: "grant-1"}, 1, nil)
+	if appErrorCode(err) != apperror.CodeDependencyUnavailable {
+		t.Fatalf("recordMutation() error = %#v", err)
+	}
+}
 
 type navigationRepository struct {
 	Repository

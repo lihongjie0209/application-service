@@ -18,7 +18,9 @@ import (
 	"github.com/lihongjie0209/application-service/internal/database"
 	"github.com/lihongjie0209/microservice-platform-go/distlock"
 	platformevents "github.com/lihongjie0209/microservice-platform-go/eventbus"
+	"github.com/lihongjie0209/microservice-platform-go/operationlog"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
+	"github.com/lihongjie0209/microservice-platform-go/securitylog"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 	commonv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/common/v1"
 	searchv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/search/v1"
@@ -43,11 +45,13 @@ type Service struct {
 	transactor *database.Transactor
 	locker     *cache.Locker
 	logger     *slog.Logger
+	operations operationlog.Recorder
+	security   securitylog.Recorder
 	now        func() time.Time
 }
 
-func NewService(repository Repository, transactor *database.Transactor, locker *cache.Locker, logger *slog.Logger) *Service {
-	return &Service{repository: repository, transactor: transactor, locker: locker, logger: logger, now: time.Now}
+func NewService(repository Repository, transactor *database.Transactor, locker *cache.Locker, logger *slog.Logger, operations operationlog.Recorder, security securitylog.Recorder) *Service {
+	return &Service{repository: repository, transactor: transactor, locker: locker, logger: logger, operations: operations, security: security, now: time.Now}
 }
 
 var codePattern = regexp.MustCompile(`^[a-z][a-z0-9._-]{1,127}$`)
@@ -415,7 +419,8 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 		}
 		return s.addSearchProjectionEvent(ctx, tx, application, current, actor, now)
 	})
-	return current, translate(err)
+	resultErr := translate(err)
+	return current, s.recordMutation(ctx, "application.tenant-grant.grant", current, expected, resultErr)
 }
 func (s *Service) GetGrant(ctx context.Context, tenantID, appID string) (Grant, error) {
 	tenantID, appID = strings.TrimSpace(tenantID), strings.TrimSpace(appID)
@@ -427,6 +432,36 @@ func (s *Service) GetGrant(ctx context.Context, tenantID, appID string) (Grant, 
 	}
 	v, err := s.repository.GetGrant(ctx, tenantID, appID)
 	return v, translate(err)
+}
+
+func (s *Service) recordMutation(ctx context.Context, operation string, grant Grant, expected int64, resultErr error) error {
+	succeeded := resultErr == nil
+	metadata := map[string]any{"tenant_id": grant.TenantID, "expected_version": expected, "operation": operation}
+	if s.operations != nil {
+		entry := operationlog.Entry{Operation: operation, ResourceType: "tenant_application_grant", ResourceID: grant.ID, ApplicationID: grant.ApplicationID, Source: "application-service", Protocol: "internal", Request: metadata, Succeeded: succeeded}
+		if resultErr != nil {
+			entry.ErrorMessage = resultErr.Error()
+		}
+		if logErr := s.operations.Record(ctx, entry); logErr != nil {
+			if resultErr == nil {
+				return apperror.Unavailable("operation log unavailable", logErr)
+			}
+			s.logger.ErrorContext(ctx, "record tenant application operation", "operation", operation, "error", logErr)
+		}
+	}
+	if s.security != nil {
+		entry := securitylog.Entry{EventType: securitylog.EventTenantApplicationGrant, SubjectID: grant.ID, SubjectType: "tenant_application_grant", TenantID: grant.TenantID, ApplicationID: grant.ApplicationID, Succeeded: succeeded, Metadata: metadata}
+		if resultErr != nil {
+			entry.ErrorMessage = resultErr.Error()
+		}
+		if logErr := s.security.Record(ctx, entry); logErr != nil {
+			if resultErr == nil && s.security.FailClosed() {
+				return apperror.Unavailable("security log unavailable", logErr)
+			}
+			s.logger.ErrorContext(ctx, "record tenant application security event", "operation", operation, "error", logErr)
+		}
+	}
+	return resultErr
 }
 func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected int64) (Grant, error) {
 	actor, err := actor(ctx)
@@ -456,7 +491,8 @@ func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected i
 		key := &searchv1.DocumentKey{TenantId: tenantID, SourceService: "application-service", DocumentType: "application", SourceId: application.ID, SourceVersion: searchProjectionVersion(application.Version, v.Version)}
 		return s.addEvent(ctx, tx, "platform.search.document.deleted.v1", "platform.search.document.deleted.v1", application.ID, "search_document", tenantID, application.ID, actor, v.UpdatedAt, &searchv1.SearchDocumentDeletedEvent{Document: key})
 	})
-	return v, translate(err)
+	resultErr := translate(err)
+	return v, s.recordMutation(ctx, "application.tenant-grant.revoke", v, expected, resultErr)
 }
 func (s *Service) addSearchProjectionEvent(ctx context.Context, tx *sqlx.Tx, application Application, grant Grant, actor string, at time.Time) error {
 	document := searchDocument(application, grant)
