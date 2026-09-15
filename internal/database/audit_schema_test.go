@@ -40,3 +40,24 @@ func TestEveryApplicationTableRegistersDatabaseAuditMaintenance(t *testing.T) {
 		})
 	}
 }
+
+func TestPageFilterIndexesExistForEveryDialect(t *testing.T) {
+	t.Parallel()
+	indexes := []string{"applications_page_created_idx", "applications_page_updated_idx", "tenant_application_grants_page_created_idx", "tenant_application_grants_page_updated_idx"}
+	for _, dialect := range []string{"postgres", "kingbase", "mysql"} {
+		dialect := dialect
+		t.Run(dialect, func(t *testing.T) {
+			t.Parallel()
+			content, err := os.ReadFile(filepath.Join("..", "..", "migrations", dialect, "000006_page_filter_indexes.up.sql"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			ddl := strings.ToLower(string(content))
+			for _, index := range indexes {
+				if !strings.Contains(ddl, "create index "+index) {
+					t.Errorf("%s is missing %s", dialect, index)
+				}
+			}
+		})
+	}
+}

@@ -7,6 +7,7 @@ import (
 	applicationdomain "github.com/lihongjie0209/application-service/internal/application"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
 	commonv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/common/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type applicationServer struct {
@@ -28,7 +29,7 @@ func (s *applicationServer) GetApplication(ctx context.Context, r *applicationv1
 }
 func (s *applicationServer) ListApplications(ctx context.Context, r *applicationv1.ListApplicationsRequest) (*applicationv1.ListApplicationsResponse, error) {
 	page, size := pageValues(r.GetPage())
-	v, e := s.service.ListApplications(ctx, r.GetStatus(), page, size)
+	v, e := s.service.PageApplications(ctx, applicationdomain.ApplicationFilter{Keyword: r.GetKeyword(), Status: r.GetStatus(), IDs: r.GetIds(), CreatedFrom: timestampPointer(r.GetCreatedFrom()), CreatedTo: timestampPointer(r.GetCreatedTo()), UpdatedFrom: timestampPointer(r.GetUpdatedFrom()), UpdatedTo: timestampPointer(r.GetUpdatedTo())}, page, size)
 	out := make([]*applicationv1.Application, 0, len(v.Items))
 	for _, x := range v.Items {
 		out = append(out, applicationdomain.ToProtoApplication(x))
@@ -93,7 +94,7 @@ func (s *applicationServer) RevokeTenantApplication(ctx context.Context, r *appl
 }
 func (s *applicationServer) ListTenantApplications(ctx context.Context, r *applicationv1.ListTenantApplicationsRequest) (*applicationv1.ListTenantApplicationsResponse, error) {
 	page, size := pageValues(r.GetPage())
-	grants, apps, e := s.service.ListTenantApplications(ctx, r.GetTenantId(), r.GetActiveOnly(), page, size)
+	grants, apps, e := s.service.PageTenantApplications(ctx, applicationdomain.GrantFilter{TenantID: r.GetTenantId(), ActiveOnly: r.GetActiveOnly(), ApplicationIDs: r.GetApplicationIds(), Statuses: r.GetStatuses(), CreatedFrom: timestampPointer(r.GetCreatedFrom()), CreatedTo: timestampPointer(r.GetCreatedTo()), UpdatedFrom: timestampPointer(r.GetUpdatedFrom()), UpdatedTo: timestampPointer(r.GetUpdatedTo())}, page, size)
 	pg := make([]*applicationv1.TenantApplicationGrant, 0, len(grants.Items))
 	for _, x := range grants.Items {
 		pg = append(pg, applicationdomain.ToProtoGrant(x))
@@ -103,6 +104,13 @@ func (s *applicationServer) ListTenantApplications(ctx context.Context, r *appli
 		pa = append(pa, applicationdomain.ToProtoApplication(x))
 	}
 	return &applicationv1.ListTenantApplicationsResponse{Grants: pg, Applications: pa, Page: &commonv1.PageResult{Page: uint32(grants.Page), PageSize: uint32(grants.PageSize), Total: uint64(grants.Total)}}, e
+}
+func timestampPointer(value *timestamppb.Timestamp) *time.Time {
+	if value == nil || !value.IsValid() {
+		return nil
+	}
+	result := value.AsTime()
+	return &result
 }
 func (s *applicationServer) BatchCheckTenantApplications(ctx context.Context, r *applicationv1.BatchCheckTenantApplicationsRequest) (*applicationv1.BatchCheckTenantApplicationsResponse, error) {
 	var at time.Time

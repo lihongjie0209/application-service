@@ -19,6 +19,7 @@ type Repository interface {
 	GetApplication(context.Context, string) (Application, error)
 	ListApplications(context.Context, string, int, int) ([]Application, int64, error)
 	SearchApplications(context.Context, string, string, int, int) ([]Application, int64, error)
+	PageApplications(context.Context, ApplicationFilter, int, int) ([]Application, int64, error)
 	GetMenu(context.Context, string) (Menu, error)
 	UpsertMenu(context.Context, sqlx.ExtContext, Menu, int64) error
 	DeleteMenu(context.Context, sqlx.ExtContext, string, int64, time.Time, string) error
@@ -30,10 +31,25 @@ type Repository interface {
 	CreateGrant(context.Context, sqlx.ExtContext, Grant) error
 	UpdateGrant(context.Context, sqlx.ExtContext, Grant, int64) error
 	ListGrants(context.Context, string, bool, time.Time, int, int) ([]Grant, []Application, int64, error)
+	PageGrants(context.Context, GrantFilter, time.Time, int, int) ([]Grant, []Application, int64, error)
 	ListActiveGrantsByApplication(context.Context, sqlx.ExtContext, string, time.Time) ([]Grant, error)
 	BatchActiveGrants(context.Context, string, []string, time.Time) (map[string]bool, error)
 	BatchGrants(context.Context, string, []string) ([]Grant, error)
 	AddOutbox(context.Context, sqlx.ExtContext, OutboxEvent) error
+}
+type ApplicationFilter struct {
+	Keyword                string
+	Status                 string
+	IDs                    []string
+	CreatedFrom, CreatedTo *time.Time
+	UpdatedFrom, UpdatedTo *time.Time
+}
+type GrantFilter struct {
+	TenantID                 string
+	ActiveOnly               bool
+	ApplicationIDs, Statuses []string
+	CreatedFrom, CreatedTo   *time.Time
+	UpdatedFrom, UpdatedTo   *time.Time
 }
 type SQLRepository struct{ db *sqlx.DB }
 
@@ -76,25 +92,120 @@ func (r *SQLRepository) ListApplications(ctx context.Context, status string, lim
 	return items, total, err
 }
 func (r *SQLRepository) SearchApplications(ctx context.Context, keyword, status string, limit, offset int) ([]Application, int64, error) {
+	return r.PageApplications(ctx, ApplicationFilter{Keyword: keyword, Status: status}, limit, offset)
+}
+func (r *SQLRepository) PageApplications(ctx context.Context, filter ApplicationFilter, limit, offset int) ([]Application, int64, error) {
 	where := `deleted_at IS NULL`
 	args := []any{}
-	if status != "" {
+	if filter.Status != "" {
 		where += ` AND status=?`
-		args = append(args, status)
+		args = append(args, filter.Status)
 	}
-	if keyword != "" {
+	if filter.Keyword != "" {
 		where += ` AND (LOWER(code) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?))`
-		pattern := "%" + keyword + "%"
+		pattern := "%" + filter.Keyword + "%"
 		args = append(args, pattern, pattern)
 	}
+	if len(filter.IDs) > 0 {
+		where += ` AND id IN (?)`
+		args = append(args, filter.IDs)
+	}
+	for _, bound := range []struct {
+		column, operator string
+		value            *time.Time
+	}{{"created_at", ">=", filter.CreatedFrom}, {"created_at", "<=", filter.CreatedTo}, {"updated_at", ">=", filter.UpdatedFrom}, {"updated_at", "<=", filter.UpdatedTo}} {
+		if bound.value != nil {
+			where += ` AND ` + bound.column + bound.operator + `?`
+			args = append(args, *bound.value)
+		}
+	}
+	countQuery, countArgs, err := sqlx.In(`SELECT COUNT(*) FROM applications WHERE `+where, args...)
+	if err != nil {
+		return nil, 0, err
+	}
 	var total int64
-	if err := r.db.GetContext(ctx, &total, r.db.Rebind(`SELECT COUNT(*) FROM applications WHERE `+where), args...); err != nil {
+	if err := r.db.GetContext(ctx, &total, r.db.Rebind(countQuery), countArgs...); err != nil {
 		return nil, 0, err
 	}
 	queryArgs := append(append([]any(nil), args...), limit, offset)
+	query, queryArgs, err := sqlx.In(`SELECT `+applicationColumns+` FROM applications WHERE `+where+` ORDER BY sort_order,id LIMIT ? OFFSET ?`, queryArgs...)
+	if err != nil {
+		return nil, 0, err
+	}
 	items := []Application{}
-	err := r.db.SelectContext(ctx, &items, r.db.Rebind(`SELECT `+applicationColumns+` FROM applications WHERE `+where+` ORDER BY sort_order,id LIMIT ? OFFSET ?`), queryArgs...)
+	err = r.db.SelectContext(ctx, &items, r.db.Rebind(query), queryArgs...)
 	return items, total, err
+}
+
+func (r *SQLRepository) PageGrants(ctx context.Context, filter GrantFilter, at time.Time, limit, offset int) ([]Grant, []Application, int64, error) {
+	where := `g.tenant_id=? AND g.deleted_at IS NULL AND a.deleted_at IS NULL`
+	args := []any{filter.TenantID}
+	if filter.ActiveOnly {
+		where += ` AND g.status='active' AND g.valid_from<=? AND (g.valid_until IS NULL OR g.valid_until>?)`
+		args = append(args, at, at)
+	}
+	if len(filter.ApplicationIDs) > 0 {
+		where += ` AND g.application_id IN (?)`
+		args = append(args, filter.ApplicationIDs)
+	}
+	if len(filter.Statuses) > 0 {
+		where += ` AND g.status IN (?)`
+		args = append(args, filter.Statuses)
+	}
+	for _, bound := range []struct {
+		column, operator string
+		value            *time.Time
+	}{{"g.created_at", ">=", filter.CreatedFrom}, {"g.created_at", "<=", filter.CreatedTo}, {"g.updated_at", ">=", filter.UpdatedFrom}, {"g.updated_at", "<=", filter.UpdatedTo}} {
+		if bound.value != nil {
+			where += ` AND ` + bound.column + bound.operator + `?`
+			args = append(args, *bound.value)
+		}
+	}
+	countQuery, countArgs, err := sqlx.In(`SELECT COUNT(*) FROM tenant_application_grants g JOIN applications a ON a.id=g.application_id WHERE `+where, args...)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	var total int64
+	if err := r.db.GetContext(ctx, &total, r.db.Rebind(countQuery), countArgs...); err != nil {
+		return nil, nil, 0, err
+	}
+	queryArgs := append(append([]any(nil), args...), limit, offset)
+	query, queryArgs, err := sqlx.In(`SELECT g.`+strings.ReplaceAll(grantColumns, `,`, `,g.`)+` FROM tenant_application_grants g JOIN applications a ON a.id=g.application_id WHERE `+where+` ORDER BY a.sort_order,a.id LIMIT ? OFFSET ?`, queryArgs...)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	grants := []Grant{}
+	if err := r.db.SelectContext(ctx, &grants, r.db.Rebind(query), queryArgs...); err != nil {
+		return nil, nil, 0, err
+	}
+	if len(grants) == 0 {
+		return grants, []Application{}, total, nil
+	}
+	ids := make([]string, 0, len(grants))
+	for _, grant := range grants {
+		ids = append(ids, grant.ApplicationID)
+	}
+	appQuery, appArgs, err := sqlx.In(`SELECT `+applicationColumns+` FROM applications WHERE id IN (?) AND deleted_at IS NULL`, ids)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	loaded := []Application{}
+	if err := r.db.SelectContext(ctx, &loaded, r.db.Rebind(appQuery), appArgs...); err != nil {
+		return nil, nil, 0, err
+	}
+	byID := make(map[string]Application, len(loaded))
+	for _, app := range loaded {
+		byID[app.ID] = app
+	}
+	apps := make([]Application, 0, len(grants))
+	for _, grant := range grants {
+		app, ok := byID[grant.ApplicationID]
+		if !ok {
+			return nil, nil, 0, ErrNotFound
+		}
+		apps = append(apps, app)
+	}
+	return grants, apps, total, nil
 }
 func (r *SQLRepository) GetMenu(ctx context.Context, id string) (Menu, error) {
 	var v Menu
@@ -168,49 +279,7 @@ func (r *SQLRepository) UpdateGrant(ctx context.Context, e sqlx.ExtContext, v Gr
 	return stale(res, err)
 }
 func (r *SQLRepository) ListGrants(ctx context.Context, tenantID string, active bool, at time.Time, limit, offset int) ([]Grant, []Application, int64, error) {
-	where := `g.tenant_id=? AND g.deleted_at IS NULL AND a.deleted_at IS NULL`
-	args := []any{tenantID}
-	if active {
-		where += ` AND g.status='active' AND g.valid_from<=? AND (g.valid_until IS NULL OR g.valid_until>?)`
-		args = append(args, at, at)
-	}
-	var total int64
-	if err := r.db.GetContext(ctx, &total, r.db.Rebind(`SELECT COUNT(*) FROM tenant_application_grants g JOIN applications a ON a.id=g.application_id WHERE `+where), args...); err != nil {
-		return nil, nil, 0, err
-	}
-	args = append(args, limit, offset)
-	grants := []Grant{}
-	if err := r.db.SelectContext(ctx, &grants, r.db.Rebind(`SELECT g.`+strings.ReplaceAll(grantColumns, `,`, `,g.`)+` FROM tenant_application_grants g JOIN applications a ON a.id=g.application_id WHERE `+where+` ORDER BY a.sort_order,a.id LIMIT ? OFFSET ?`), args...); err != nil {
-		return nil, nil, 0, err
-	}
-	if len(grants) == 0 {
-		return grants, []Application{}, total, nil
-	}
-	ids := make([]string, 0, len(grants))
-	for _, g := range grants {
-		ids = append(ids, g.ApplicationID)
-	}
-	query, queryArgs, err := sqlx.In(`SELECT `+applicationColumns+` FROM applications WHERE id IN (?) AND deleted_at IS NULL`, ids)
-	if err != nil {
-		return nil, nil, 0, err
-	}
-	loaded := []Application{}
-	if err = r.db.SelectContext(ctx, &loaded, r.db.Rebind(query), queryArgs...); err != nil {
-		return nil, nil, 0, err
-	}
-	byID := make(map[string]Application, len(loaded))
-	for _, app := range loaded {
-		byID[app.ID] = app
-	}
-	apps := make([]Application, 0, len(grants))
-	for _, grant := range grants {
-		app, ok := byID[grant.ApplicationID]
-		if !ok {
-			return nil, nil, 0, ErrNotFound
-		}
-		apps = append(apps, app)
-	}
-	return grants, apps, total, nil
+	return r.PageGrants(ctx, GrantFilter{TenantID: tenantID, ActiveOnly: active}, at, limit, offset)
 }
 
 func (r *SQLRepository) BatchGrants(ctx context.Context, tenantID string, applicationIDs []string) ([]Grant, error) {

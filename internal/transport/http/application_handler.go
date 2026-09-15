@@ -36,10 +36,15 @@ type IDRequest struct {
 	ID string `json:"id" binding:"required"`
 }
 type ListApplicationsRequest struct {
-	Keyword  string `json:"keyword"`
-	Status   string `json:"status"`
-	Page     int    `json:"page"`
-	PageSize int    `json:"page_size"`
+	Keyword     string     `json:"keyword"`
+	Status      string     `json:"status"`
+	IDs         []string   `json:"ids"`
+	CreatedFrom *time.Time `json:"created_from"`
+	CreatedTo   *time.Time `json:"created_to"`
+	UpdatedFrom *time.Time `json:"updated_from"`
+	UpdatedTo   *time.Time `json:"updated_to"`
+	Page        int        `json:"page"`
+	PageSize    int        `json:"page_size"`
 }
 type BatchTenantGrantsRequest struct {
 	TenantID       string   `json:"tenant_id" binding:"required"`
@@ -98,10 +103,16 @@ type RevokeGrantRequest struct {
 	Version       int64  `json:"version" binding:"required"`
 }
 type ListTenantApplicationsRequest struct {
-	TenantID   string `json:"tenant_id" binding:"required"`
-	ActiveOnly bool   `json:"active_only"`
-	Page       int    `json:"page"`
-	PageSize   int    `json:"page_size"`
+	TenantID       string     `json:"tenant_id" binding:"required"`
+	ActiveOnly     bool       `json:"active_only"`
+	ApplicationIDs []string   `json:"application_ids"`
+	Statuses       []string   `json:"statuses"`
+	CreatedFrom    *time.Time `json:"created_from"`
+	CreatedTo      *time.Time `json:"created_to"`
+	UpdatedFrom    *time.Time `json:"updated_from"`
+	UpdatedTo      *time.Time `json:"updated_to"`
+	Page           int        `json:"page"`
+	PageSize       int        `json:"page_size"`
 }
 type TenantApplicationsResponse struct {
 	Grants       GrantPageBody     `json:"grants"`
@@ -203,7 +214,7 @@ func (h *Handler) ListApplications(c *gin.Context) {
 	if !bind(c, h.logger, &r) {
 		return
 	}
-	v, err := h.applications.SearchApplications(c.Request.Context(), r.Keyword, r.Status, r.Page, r.PageSize)
+	v, err := h.applications.PageApplications(c.Request.Context(), application.ApplicationFilter{Keyword: r.Keyword, Status: r.Status, IDs: r.IDs, CreatedFrom: r.CreatedFrom, CreatedTo: r.CreatedTo, UpdatedFrom: r.UpdatedFrom, UpdatedTo: r.UpdatedTo}, r.Page, r.PageSize)
 	respond(c, h.logger, applicationPageBody(v), err)
 }
 
@@ -450,7 +461,7 @@ func (h *Handler) listTenantApplications(c *gin.Context) {
 	if !bind(c, h.logger, &r) {
 		return
 	}
-	grants, apps, err := h.applications.ListTenantApplications(c.Request.Context(), r.TenantID, r.ActiveOnly, r.Page, r.PageSize)
+	grants, apps, err := h.applications.PageTenantApplications(c.Request.Context(), application.GrantFilter{TenantID: r.TenantID, ActiveOnly: r.ActiveOnly, ApplicationIDs: r.ApplicationIDs, Statuses: r.Statuses, CreatedFrom: r.CreatedFrom, CreatedTo: r.CreatedTo, UpdatedFrom: r.UpdatedFrom, UpdatedTo: r.UpdatedTo}, r.Page, r.PageSize)
 	respond(c, h.logger, TenantApplicationsResponse{Grants: GrantPageBody{Items: grantBodies(grants.Items), Total: grants.Total, Page: grants.Page, PageSize: grants.PageSize}, Applications: applicationBodies(apps)}, err)
 }
 

@@ -143,15 +143,25 @@ func (s *Service) ListApplications(ctx context.Context, status string, page, pag
 	return Page[Application]{Items: items, Total: total, Page: page, PageSize: pageSize}, translate(err)
 }
 func (s *Service) SearchApplications(ctx context.Context, keyword, status string, page, pageSize int) (Page[Application], error) {
+	return s.PageApplications(ctx, ApplicationFilter{Keyword: keyword, Status: status}, page, pageSize)
+}
+func (s *Service) PageApplications(ctx context.Context, filter ApplicationFilter, page, pageSize int) (Page[Application], error) {
 	page, pageSize, err := pagination(page, pageSize)
 	if err != nil {
 		return Page[Application]{}, err
 	}
-	keyword, status = strings.TrimSpace(keyword), strings.TrimSpace(status)
-	if len(keyword) > 100 {
+	filter.Keyword, filter.Status = strings.TrimSpace(filter.Keyword), strings.TrimSpace(filter.Status)
+	if len(filter.Keyword) > 100 {
 		return Page[Application]{}, apperror.Invalid("application keyword must not exceed 100 bytes", nil)
 	}
-	items, total, err := s.repository.SearchApplications(ctx, keyword, status, pageSize, (page-1)*pageSize)
+	if filter.Status != "" && !map[string]bool{"draft": true, "active": true, "disabled": true, "archived": true}[filter.Status] {
+		return Page[Application]{}, apperror.Invalid("invalid application status", nil)
+	}
+	filter.IDs, err = normalizeOptionalIDs(filter.IDs)
+	if err != nil || !validRange(filter.CreatedFrom, filter.CreatedTo) || !validRange(filter.UpdatedFrom, filter.UpdatedTo) {
+		return Page[Application]{}, apperror.Invalid("invalid application ids or time range", err)
+	}
+	items, total, err := s.repository.PageApplications(ctx, filter, pageSize, (page-1)*pageSize)
 	return Page[Application]{Items: items, Total: total, Page: page, PageSize: pageSize}, translate(err)
 }
 func (s *Service) UpsertMenu(ctx context.Context, v Menu, expected int64) (Menu, error) {
@@ -565,16 +575,52 @@ func searchProjectionVersion(applicationVersion, grantVersion int64) int64 {
 	return applicationVersion<<32 | grantVersion&0xffffffff
 }
 func (s *Service) ListTenantApplications(ctx context.Context, tenantID string, active bool, page, pageSize int) (Page[Grant], []Application, error) {
-	if err := authorizeTenant(ctx, tenantID); err != nil {
+	return s.PageTenantApplications(ctx, GrantFilter{TenantID: tenantID, ActiveOnly: active}, page, pageSize)
+}
+func (s *Service) PageTenantApplications(ctx context.Context, filter GrantFilter, page, pageSize int) (Page[Grant], []Application, error) {
+	filter.TenantID = strings.TrimSpace(filter.TenantID)
+	if err := authorizeTenant(ctx, filter.TenantID); err != nil {
 		return Page[Grant]{}, nil, err
 	}
 	page, pageSize, err := pagination(page, pageSize)
 	if err != nil {
 		return Page[Grant]{}, nil, err
 	}
-	grants, apps, total, err := s.repository.ListGrants(ctx, tenantID, active, s.now(), pageSize, (page-1)*pageSize)
+	filter.ApplicationIDs, err = normalizeOptionalIDs(filter.ApplicationIDs)
+	if err != nil || len(filter.Statuses) > 10 || !validRange(filter.CreatedFrom, filter.CreatedTo) || !validRange(filter.UpdatedFrom, filter.UpdatedTo) {
+		return Page[Grant]{}, nil, apperror.Invalid("invalid grant filters", err)
+	}
+	for index := range filter.Statuses {
+		filter.Statuses[index] = strings.TrimSpace(filter.Statuses[index])
+		if filter.Statuses[index] != "active" && filter.Statuses[index] != "revoked" {
+			return Page[Grant]{}, nil, apperror.Invalid("invalid grant status", nil)
+		}
+	}
+	grants, apps, total, err := s.repository.PageGrants(ctx, filter, s.now(), pageSize, (page-1)*pageSize)
 	return Page[Grant]{Items: grants, Total: total, Page: page, PageSize: pageSize}, apps, translate(err)
 }
+func normalizeOptionalIDs(values []string) ([]string, error) {
+	if len(values) > 100 {
+		return nil, errors.New("at most 100 ids are allowed")
+	}
+	if len(values) == 0 {
+		return nil, nil
+	}
+	seen := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		id := strings.TrimSpace(value)
+		if id == "" {
+			return nil, errors.New("id must not be empty")
+		}
+		if _, ok := seen[id]; !ok {
+			seen[id] = struct{}{}
+			result = append(result, id)
+		}
+	}
+	return result, nil
+}
+func validRange(from, to *time.Time) bool { return from == nil || to == nil || !to.Before(*from) }
 func (s *Service) BatchCheck(ctx context.Context, tenantID string, ids []string, at time.Time) (map[string]bool, error) {
 	if err := authorizeTenant(ctx, tenantID); err != nil {
 		return nil, err

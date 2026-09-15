@@ -1,0 +1,4 @@
+DROP INDEX tenant_application_grants_page_updated_idx ON tenant_application_grants;
+DROP INDEX tenant_application_grants_page_created_idx ON tenant_application_grants;
+DROP INDEX applications_page_updated_idx ON applications;
+DROP INDEX applications_page_created_idx ON applications;

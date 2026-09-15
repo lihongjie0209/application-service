@@ -1459,6 +1459,18 @@ const docTemplate = `{
         "httptransport.ListApplicationsRequest": {
             "type": "object",
             "properties": {
+                "created_from": {
+                    "type": "string"
+                },
+                "created_to": {
+                    "type": "string"
+                },
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "keyword": {
                     "type": "string"
                 },
@@ -1469,6 +1481,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "updated_from": {
+                    "type": "string"
+                },
+                "updated_to": {
                     "type": "string"
                 }
             }
@@ -1482,13 +1500,37 @@ const docTemplate = `{
                 "active_only": {
                     "type": "boolean"
                 },
+                "application_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "created_from": {
+                    "type": "string"
+                },
+                "created_to": {
+                    "type": "string"
+                },
                 "page": {
                     "type": "integer"
                 },
                 "page_size": {
                     "type": "integer"
                 },
+                "statuses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "tenant_id": {
+                    "type": "string"
+                },
+                "updated_from": {
+                    "type": "string"
+                },
+                "updated_to": {
                     "type": "string"
                 }
             }

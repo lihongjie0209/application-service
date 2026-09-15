@@ -73,6 +73,7 @@ type applicationDirectoryRepository struct {
 	Repository
 	searchKeyword string
 	searchStatus  string
+	searchIDs     []string
 	batchTenant   string
 	batchIDs      []string
 }
@@ -113,8 +114,9 @@ func TestMutationLookupsNormalizeIDsAndEnforceTenantScope(t *testing.T) {
 	}
 }
 
-func (r *applicationDirectoryRepository) SearchApplications(_ context.Context, keyword, status string, _, _ int) ([]Application, int64, error) {
-	r.searchKeyword, r.searchStatus = keyword, status
+func (r *applicationDirectoryRepository) PageApplications(_ context.Context, filter ApplicationFilter, _, _ int) ([]Application, int64, error) {
+	r.searchKeyword, r.searchStatus = filter.Keyword, filter.Status
+	r.searchIDs = append([]string(nil), filter.IDs...)
 	return []Application{{ID: "app-1"}}, 1, nil
 }
 
@@ -127,14 +129,25 @@ func TestApplicationDirectoriesNormalizeSearchAndBatchIDs(t *testing.T) {
 	t.Parallel()
 	repository := &applicationDirectoryRepository{}
 	service := &Service{repository: repository, now: time.Now}
-	page, err := service.SearchApplications(t.Context(), " console ", "active", 1, 20)
-	if err != nil || len(page.Items) != 1 || repository.searchKeyword != "console" {
+	page, err := service.PageApplications(t.Context(), ApplicationFilter{Keyword: " console ", Status: "active", IDs: []string{" app-1 ", "app-1"}}, 1, 20)
+	if err != nil || len(page.Items) != 1 || repository.searchKeyword != "console" || len(repository.searchIDs) != 1 || repository.searchIDs[0] != "app-1" {
 		t.Fatalf("SearchApplications() = (%+v, %v), keyword=%q", page, err, repository.searchKeyword)
 	}
 	ctx := principal.WithContext(t.Context(), principal.Principal{ID: "service-1", Type: principal.TypeServiceAccount})
 	grants, err := service.BatchGrants(ctx, "tenant-1", []string{" app-1 ", "app-1"})
 	if err != nil || len(grants) != 1 || len(repository.batchIDs) != 1 || repository.batchIDs[0] != "app-1" {
 		t.Fatalf("BatchGrants() = (%+v, %v), ids=%v", grants, err, repository.batchIDs)
+	}
+}
+
+func TestApplicationPageFiltersRejectInvalidRangeAndStatus(t *testing.T) {
+	t.Parallel()
+	service := &Service{repository: &applicationDirectoryRepository{}, now: time.Now}
+	from, to := time.Now(), time.Now().Add(-time.Minute)
+	for _, filter := range []ApplicationFilter{{Status: "unknown"}, {CreatedFrom: &from, CreatedTo: &to}, {IDs: []string{""}}} {
+		if _, err := service.PageApplications(t.Context(), filter, 1, 20); appErrorCode(err) != apperror.CodeInvalidArgument {
+			t.Fatalf("PageApplications(%+v) error = %#v", filter, err)
+		}
 	}
 }
 

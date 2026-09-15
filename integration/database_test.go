@@ -149,6 +149,15 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			if grants[0].ApplicationID != prioritizedApplication.ID || applications[0].ID != prioritizedApplication.ID {
 				t.Fatalf("tenant applications are not ordered by application sort order: grants=%v applications=%v", grants, applications)
 			}
+			createdFrom, createdTo := now.Add(-time.Minute), now.Add(time.Minute)
+			filteredApplications, filteredTotal, err := repository.PageApplications(ctx, applicationdomain.ApplicationFilter{Keyword: "console", Status: "active", IDs: []string{application.ID}, CreatedFrom: &createdFrom, CreatedTo: &createdTo}, 20, 0)
+			if err != nil || filteredTotal != 1 || len(filteredApplications) != 1 || filteredApplications[0].ID != application.ID {
+				t.Fatalf("PageApplications() = (%+v, %d, %v)", filteredApplications, filteredTotal, err)
+			}
+			filteredGrants, filteredGrantApps, filteredGrantTotal, err := repository.PageGrants(ctx, applicationdomain.GrantFilter{TenantID: grant.TenantID, ApplicationIDs: []string{prioritizedApplication.ID}, Statuses: []string{"active"}, UpdatedFrom: &createdFrom, UpdatedTo: &createdTo}, now.Add(time.Second), 20, 0)
+			if err != nil || filteredGrantTotal != 1 || len(filteredGrants) != 1 || len(filteredGrantApps) != 1 || filteredGrants[0].ApplicationID != prioritizedApplication.ID {
+				t.Fatalf("PageGrants() = (%+v, %+v, %d, %v)", filteredGrants, filteredGrantApps, filteredGrantTotal, err)
+			}
 			active, err := repository.BatchActiveGrants(ctx, grant.TenantID, []string{application.ID, "missing"}, now.Add(time.Second))
 			if err != nil || !active[application.ID] || active["missing"] {
 				t.Fatalf("active=%v err=%v", active, err)
