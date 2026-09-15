@@ -132,6 +132,14 @@ Set `APP_DATABASE_ENABLED=true`, `APP_DATABASE_TYPE`, and `APP_DATABASE_DSN`.
 
 The official Kingbase documentation describes Gokb as a pure-Go `database/sql` driver registered as `kingbase`, but distribution commonly accompanies the product rather than a stable public Go module.
 
+Audit timestamps, actors, versions and logical deletion are database-owned.
+PostgreSQL/Kingbase use transaction-local `app.actor_id`; MySQL uses
+`@app_actor_id` on the transaction connection. The MySQL migration identity
+needs `TRIGGER` on this service database and, when binary logging is enabled,
+the DBA must enable `log_bin_trust_function_creators=1`. Runtime credentials do
+not require DDL privileges after migration. The development Compose and CI
+Testcontainers profiles include the required server setting.
+
 ## Redis lock and scheduled jobs
 
 Distributed locking is implemented with [`go-redsync/redsync/v4`](https://github.com/go-redsync/redsync). The local `cache.Locker` adapter provides non-blocking `TryLock`, context-aware retrying `Lock`, ownership-safe `Unlock`, explicit `Extend`, and the lock validity deadline through `Until`. The sample six-field cron job demonstrates cross-instance locking.

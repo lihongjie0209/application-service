@@ -4,16 +4,19 @@ package integration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	applicationdomain "github.com/lihongjie0209/application-service/internal/application"
 	"github.com/lihongjie0209/application-service/internal/config"
 	appdb "github.com/lihongjie0209/application-service/internal/database"
 	"github.com/lihongjie0209/application-service/internal/migration"
+	"github.com/lihongjie0209/microservice-platform-go/principal"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -72,40 +75,64 @@ func TestRepositoryAndMigrations(t *testing.T) {
 				t.Fatal("generic template migration must not create a users table")
 			}
 			repository := applicationdomain.NewRepository(db)
+			ctx = principal.WithContext(ctx, principal.Principal{ID: "integration-test", Type: principal.TypeSystem})
+			transactor := appdb.NewTransactor(db)
+			write := func(fn func(sqlx.ExtContext) error) error {
+				return transactor.Within(ctx, nil, func(tx *sqlx.Tx) error { return fn(tx) })
+			}
 			now := time.Now().Truncate(time.Microsecond)
 			application := applicationdomain.Application{ID: "app-1", Code: "orders", Name: "Orders", SortOrder: 20, Status: "active", MetadataJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
-			if err := repository.CreateApplication(ctx, db, application); err != nil {
+			if err := write(func(executor sqlx.ExtContext) error { return repository.CreateApplication(ctx, executor, application) }); err != nil {
 				t.Fatal(err)
+			}
+			var audit struct {
+				CreatedBy string `db:"created_by"`
+				UpdatedBy string `db:"updated_by"`
+				Version   int64  `db:"version"`
+			}
+			if err := db.GetContext(ctx, &audit, db.Rebind(`SELECT created_by,updated_by,version FROM applications WHERE id=?`), application.ID); err != nil {
+				t.Fatal(err)
+			}
+			if audit.CreatedBy != "integration-test" || audit.UpdatedBy != "integration-test" || audit.Version != 1 {
+				t.Fatalf("database-owned audit fields = %+v", audit)
 			}
 			searchedApplications, searchedTotal, err := repository.SearchApplications(ctx, "order", "active", 20, 0)
 			if err != nil || searchedTotal != 1 || len(searchedApplications) != 1 || searchedApplications[0].ID != application.ID {
 				t.Fatalf("SearchApplications() = (%+v, %d, %v)", searchedApplications, searchedTotal, err)
 			}
 			application.Name, application.UpdatedAt = "Order Center", now.Add(time.Second)
-			if err := repository.UpdateApplication(ctx, db, application, 1); err != nil {
+			if err := write(func(executor sqlx.ExtContext) error {
+				return repository.UpdateApplication(ctx, executor, application, 1)
+			}); err != nil {
 				t.Fatal(err)
 			}
-			if err := repository.UpdateApplication(ctx, db, application, 1); err == nil {
+			if err := write(func(executor sqlx.ExtContext) error {
+				return repository.UpdateApplication(ctx, executor, application, 1)
+			}); err == nil {
 				t.Fatal("expected stale application version")
 			}
 			menu := applicationdomain.Menu{ID: "menu-1", ApplicationID: application.ID, Code: "orders.list", Type: "page", Name: "Orders", Route: "/orders", PermissionCode: "orders.list", PermissionScope: "tenant", Visible: true, Status: "active", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
-			if err := repository.UpsertMenu(ctx, db, menu, 0); err != nil {
+			if err := write(func(executor sqlx.ExtContext) error { return repository.UpsertMenu(ctx, executor, menu, 0) }); err != nil {
 				t.Fatal(err)
 			}
 			release := applicationdomain.MenuRelease{ID: "release-1", ApplicationID: application.ID, ReleaseNumber: 1, Status: "published", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
-			if err := repository.CreateRelease(ctx, db, release, []applicationdomain.Menu{menu}); err != nil {
+			if err := write(func(executor sqlx.ExtContext) error {
+				return repository.CreateRelease(ctx, executor, release, []applicationdomain.Menu{menu})
+			}); err != nil {
 				t.Fatal(err)
 			}
 			grant := applicationdomain.Grant{ID: "grant-1", TenantID: "tenant-1", ApplicationID: application.ID, Status: "active", ValidFrom: now, Source: "manual", EntitlementsJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
-			if err := repository.CreateGrant(ctx, db, grant); err != nil {
+			if err := write(func(executor sqlx.ExtContext) error { return repository.CreateGrant(ctx, executor, grant) }); err != nil {
 				t.Fatal(err)
 			}
 			prioritizedApplication := applicationdomain.Application{ID: "app-2", Code: "accounts", Name: "Accounts", SortOrder: 10, Status: "active", MetadataJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
-			if err := repository.CreateApplication(ctx, db, prioritizedApplication); err != nil {
+			if err := write(func(executor sqlx.ExtContext) error {
+				return repository.CreateApplication(ctx, executor, prioritizedApplication)
+			}); err != nil {
 				t.Fatal(err)
 			}
 			prioritizedGrant := applicationdomain.Grant{ID: "grant-2", TenantID: grant.TenantID, ApplicationID: prioritizedApplication.ID, Status: "active", ValidFrom: now, Source: "manual", EntitlementsJSON: "{}", Version: 1, CreatedAt: now.Add(-time.Second), UpdatedAt: now, CreatedBy: "test", UpdatedBy: "test"}
-			if err := repository.CreateGrant(ctx, db, prioritizedGrant); err != nil {
+			if err := write(func(executor sqlx.ExtContext) error { return repository.CreateGrant(ctx, executor, prioritizedGrant) }); err != nil {
 				t.Fatal(err)
 			}
 			grantBatch, err := repository.BatchGrants(ctx, grant.TenantID, []string{application.ID, "missing-app"})
@@ -125,6 +152,24 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			active, err := repository.BatchActiveGrants(ctx, grant.TenantID, []string{application.ID, "missing"}, now.Add(time.Second))
 			if err != nil || !active[application.ID] || active["missing"] {
 				t.Fatalf("active=%v err=%v", active, err)
+			}
+			if err := write(func(executor sqlx.ExtContext) error {
+				return repository.DeleteMenu(ctx, executor, menu.ID, 1, now.Add(2*time.Second), "ignored")
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := repository.GetMenu(ctx, menu.ID); !errors.Is(err, applicationdomain.ErrNotFound) {
+				t.Fatalf("GetMenu() after logical delete error = %v", err)
+			}
+			protected := applicationdomain.Application{ID: "app-delete-protected", Code: "protected", Name: "Protected", Status: "draft", MetadataJSON: "{}", Version: 1, CreatedAt: now, UpdatedAt: now, CreatedBy: "ignored", UpdatedBy: "ignored"}
+			if err := write(func(executor sqlx.ExtContext) error { return repository.CreateApplication(ctx, executor, protected) }); err != nil {
+				t.Fatal(err)
+			}
+			if err := write(func(executor sqlx.ExtContext) error {
+				_, err := executor.ExecContext(ctx, db.Rebind(`DELETE FROM applications WHERE id=?`), protected.ID)
+				return err
+			}); err == nil {
+				t.Fatal("physical application delete unexpectedly succeeded")
 			}
 			if err := db.Close(); err != nil {
 				t.Fatal(err)
@@ -151,7 +196,11 @@ func startDatabase(t *testing.T, ctx context.Context, databaseType string) (stri
 		}
 		return dsn, dsn
 	case "mysql":
-		container, err := mysql.Run(ctx, "mysql:8.4", mysql.WithDatabase("app"), mysql.WithUsername("app"), mysql.WithPassword("app"))
+		configPath, err := filepath.Abs(filepath.Join("testdata", "mysql.cnf"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		container, err := mysql.Run(ctx, "mysql:8.4", mysql.WithDatabase("app"), mysql.WithUsername("app"), mysql.WithPassword("app"), mysql.WithConfigFile(configPath))
 		if err != nil {
 			t.Fatal(err)
 		}

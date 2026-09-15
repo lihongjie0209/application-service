@@ -99,7 +99,7 @@ func newApplicationOutboxStore(db *sqlx.DB) (*platformoutbox.SQLStore, error) {
 	if db == nil {
 		return nil, nil
 	}
-	return platformoutbox.NewSQLStore(db, "application_outbox_events")
+	return platformoutbox.NewSQLStore(db, "application_outbox_events", platformoutbox.WithWorkerAuditActor("application-service:outbox"))
 }
 
 var EventBusModule = fx.Module("application-event-bus", fx.Provide(newApplicationOutboxStore, newApplicationEventRuntime), fx.Invoke(func(*applicationEventRuntime) {}))
