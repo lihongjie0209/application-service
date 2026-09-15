@@ -175,7 +175,7 @@ func (r *SQLRepository) ListGrants(ctx context.Context, tenantID string, active 
 		args = append(args, at, at)
 	}
 	var total int64
-	if err := r.db.GetContext(ctx, &total, r.db.Rebind(`SELECT COUNT(*) FROM tenant_application_grants g WHERE `+where), args...); err != nil {
+	if err := r.db.GetContext(ctx, &total, r.db.Rebind(`SELECT COUNT(*) FROM tenant_application_grants g JOIN applications a ON a.id=g.application_id WHERE `+where), args...); err != nil {
 		return nil, nil, 0, err
 	}
 	args = append(args, limit, offset)
