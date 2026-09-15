@@ -107,24 +107,13 @@ func (a authorizationStub) Authorize(context.Context, principal.Principal, platf
 	return a.err
 }
 
-func TestApplicationHTTPRequirementCoversEveryBusinessRoute(t *testing.T) {
-	t.Parallel()
-	for _, route := range []string{
-		"/api/v1/applications/create", "/api/v1/applications/update", "/api/v1/applications/get", "/api/v1/applications/list",
-		"/api/v1/applications/menus/upsert", "/api/v1/applications/menus/get", "/api/v1/applications/menus/delete", "/api/v1/applications/menus/draft/list", "/api/v1/applications/menus/publish",
-		"/api/v1/applications/navigation/get", "/api/v1/applications/navigation/batch-get", "/api/v1/applications/tenant-grants/grant", "/api/v1/applications/tenant-grants/get", "/api/v1/applications/tenant-grants/revoke",
-		"/api/v1/applications/tenant-grants/list", "/api/v1/applications/tenant-grants/manage/list", "/api/v1/applications/tenant-grants/manage/batch-get", "/api/v1/applications/tenant-grants/batch-check",
-	} {
-		if requirement, ok := applicationHTTPRequirement(route); !ok || requirement.Resource == "" || requirement.Action == "" {
-			t.Fatalf("route %q requirement = %+v, %v", route, requirement, ok)
-		}
-	}
-	if _, ok := applicationHTTPRequirement("/api/v1/version"); ok {
-		t.Fatal("version endpoint must not require a domain permission")
-	}
+type routePolicyEvaluatorStub struct{ err error }
+
+func (s routePolicyEvaluatorStub) EvaluateRoute(context.Context, string, string, string, string, platformauthz.Authorizer) error {
+	return s.err
 }
 
-func TestApplicationHTTPRequirementSeparatesPlatformManagementFromTenantConsumption(t *testing.T) {
+func TestPlatformAdministrationRouteSeparatesManagementFromTenantConsumption(t *testing.T) {
 	t.Parallel()
 	for _, route := range []string{
 		"/api/v1/applications/create",
@@ -133,9 +122,8 @@ func TestApplicationHTTPRequirementSeparatesPlatformManagementFromTenantConsumpt
 		"/api/v1/applications/tenant-grants/get",
 		"/api/v1/applications/tenant-grants/manage/list",
 	} {
-		requirement, ok := applicationHTTPRequirement(route)
-		if !ok || requirement.Scope != platformauthz.ScopePlatform {
-			t.Fatalf("route %q scope = %v, want platform", route, requirement.Scope)
+		if !platformAdministrationRoute(route) {
+			t.Fatalf("route %q must be platform-scoped", route)
 		}
 	}
 	for _, route := range []string{
@@ -143,9 +131,8 @@ func TestApplicationHTTPRequirementSeparatesPlatformManagementFromTenantConsumpt
 		"/api/v1/applications/navigation/batch-get",
 		"/api/v1/applications/tenant-grants/list",
 	} {
-		requirement, ok := applicationHTTPRequirement(route)
-		if !ok || requirement.Scope != platformauthz.ScopePrincipal {
-			t.Fatalf("route %q scope = %v, want principal-derived", route, requirement.Scope)
+		if platformAdministrationRoute(route) {
+			t.Fatalf("route %q must remain tenant-scoped", route)
 		}
 	}
 }
@@ -167,7 +154,7 @@ func TestAuthorizationFailsClosedAndClassifiesOutage(t *testing.T) {
 				identity := principal.Principal{ID: "user-1", Type: principal.TypeUser, TenantID: "tenant-1", MembershipID: "membership-1"}
 				c.Request = c.Request.WithContext(principal.WithContext(c.Request.Context(), identity))
 				c.Next()
-			}, Authorization(true, authorizationStub{err: test.err}, slog.New(slog.NewTextHandler(io.Discard, nil))))
+			}, DatabaseAuthorization(true, "application-service", routePolicyEvaluatorStub{err: test.err}, authorizationStub{}, slog.New(slog.NewTextHandler(io.Discard, nil))))
 			router.POST("/api/v1/applications/list", func(c *gin.Context) { OK(c, nil) })
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/api/v1/applications/list", nil))
@@ -230,6 +217,44 @@ func TestAuthentication_PSKPrecedesSkipAndJWT(t *testing.T) {
 				OK(c, nil)
 			})
 			request := httptest.NewRequest(http.MethodPost, "/api/v1/external/callback", nil)
+			request.Header.Set("Authorization", test.header)
+			recorder := httptest.NewRecorder()
+			router.ServeHTTP(recorder, request)
+			if recorder.Code != test.status {
+				t.Fatalf("status = %d, want %d", recorder.Code, test.status)
+			}
+		})
+	}
+}
+
+func TestDatabaseAuthenticationDefersAnonymousAndInjectsPSK(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+	const key = "01234567890123456789012345678901"
+	service := auth.New(config.Config{JWT: config.JWT{Issuer: "test", Secret: key, TTL: time.Hour}})
+	for _, test := range []struct {
+		name, header string
+		status       int
+		principalID  string
+	}{
+		{name: "anonymous", status: http.StatusOK},
+		{name: "valid PSK", header: "PSK " + key, status: http.StatusOK, principalID: "application-service:psk"},
+		{name: "invalid PSK", header: "PSK invalid", status: http.StatusUnauthorized},
+		{name: "unsupported", header: "Basic value", status: http.StatusUnauthorized},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			router := gin.New()
+			router.Use(RequestID(), DatabaseAuthentication(service, slog.New(slog.NewTextHandler(io.Discard, nil)), config.Config{App: config.App{Name: "application-service"}, Auth: config.Auth{PSK: config.PSK{Enabled: true, Key: key}}}))
+			router.POST("/api/v1/test", func(c *gin.Context) {
+				value, ok := principal.FromContext(c.Request.Context())
+				if test.principalID == "" && ok || test.principalID != "" && (!ok || value.ID != test.principalID || value.Type != principal.TypeServiceAccount) {
+					c.AbortWithStatus(http.StatusInternalServerError)
+					return
+				}
+				OK(c, nil)
+			})
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/test", nil)
 			request.Header.Set("Authorization", test.header)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)

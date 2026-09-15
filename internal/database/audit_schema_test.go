@@ -61,3 +61,33 @@ func TestPageFilterIndexesExistForEveryDialect(t *testing.T) {
 		})
 	}
 }
+
+func TestRoutePolicyTablesHaveAuditTriggersForEveryDialect(t *testing.T) {
+	t.Parallel()
+	tables := []string{"route_definitions", "route_policy_definitions", "route_policy_permission_refs"}
+	for _, dialect := range []string{"postgres", "kingbase", "mysql"} {
+		dialect := dialect
+		t.Run(dialect, func(t *testing.T) {
+			t.Parallel()
+			content, err := os.ReadFile(filepath.Join("..", "..", "migrations", dialect, "000007_route_policies.up.sql"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			ddl := strings.ToLower(string(content))
+			for _, table := range tables {
+				if !strings.Contains(ddl, "create table "+table) {
+					t.Errorf("%s is missing %s", dialect, table)
+				}
+				if dialect == "mysql" {
+					for _, suffix := range []string{"_audit_bi", "_audit_bu", "_audit_bd"} {
+						if !strings.Contains(ddl, "create trigger "+table+suffix) {
+							t.Errorf("mysql is missing %s%s", table, suffix)
+						}
+					}
+				} else if !strings.Contains(ddl, "create trigger "+table+"_audit_row") {
+					t.Errorf("%s is missing audit trigger for %s", dialect, table)
+				}
+			}
+		})
+	}
+}

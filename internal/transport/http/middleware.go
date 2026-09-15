@@ -28,6 +28,7 @@ import (
 	"github.com/lihongjie0209/application-service/internal/requestid"
 	platformauthz "github.com/lihongjie0209/microservice-platform-go/authz"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
+	platformpolicy "github.com/lihongjie0209/microservice-platform-go/routepolicy"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -334,51 +335,73 @@ func JWT(service *auth.Service, logger *slog.Logger) gin.HandlerFunc {
 	}
 }
 
-func Authorization(enabled bool, authorizer platformauthz.Authorizer, logger *slog.Logger) gin.HandlerFunc {
+// DatabaseAuthentication verifies a credential when one is supplied. The
+// database-owned route policy decides whether an anonymous caller is allowed.
+func DatabaseAuthentication(service *auth.Service, logger *slog.Logger, cfg config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		requirement, protected := applicationHTTPRequirement(c.FullPath())
-		if !enabled || !protected {
+		header := strings.TrimSpace(c.GetHeader("Authorization"))
+		if header == "" {
 			c.Next()
 			return
 		}
-		if err := platformauthz.Enforce(c.Request.Context(), authorizer, requirement); err != nil {
-			if errors.Is(err, platformauthz.ErrDecisionUnavailable) {
+		scheme, raw, ok := strings.Cut(header, " ")
+		if !ok || raw == "" {
+			Fail(c, logger, apperror.Unauthorized("invalid authorization credential"))
+			return
+		}
+		var identity principal.Principal
+		switch {
+		case strings.EqualFold(scheme, "Bearer"):
+			verified, err := service.Verify(c.Request.Context(), raw)
+			if err != nil {
+				Fail(c, logger, apperror.Unauthorized("invalid or expired token"))
+				return
+			}
+			identity = verified
+		case strings.EqualFold(scheme, "PSK"):
+			if !cfg.Auth.PSK.Enabled || !auth.VerifyPSK(header, cfg.Auth.PSK.Key) {
+				Fail(c, logger, apperror.Unauthorized("invalid PSK"))
+				return
+			}
+			identity = principal.Principal{ID: cfg.App.Name + ":psk", Type: principal.TypeServiceAccount}
+		default:
+			Fail(c, logger, apperror.Unauthorized("unsupported authorization scheme"))
+			return
+		}
+		c.Set("subject", identity.ID)
+		ctx := principal.WithContext(c.Request.Context(), identity)
+		c.Request = c.Request.WithContext(platformauthz.WithCallerCredential(ctx, header))
+		c.Next()
+	}
+}
+
+type routePolicyEvaluator interface {
+	EvaluateRoute(context.Context, string, string, string, string, platformauthz.Authorizer) error
+}
+
+func DatabaseAuthorization(enabled bool, serviceName string, policies routePolicyEvaluator, authorizer platformauthz.Authorizer, logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !enabled {
+			c.Next()
+			return
+		}
+		if err := policies.EvaluateRoute(c.Request.Context(), "http", strings.ToLower(c.Request.Method), c.FullPath(), serviceName, authorizer); err != nil {
+			if errors.Is(err, platformauthz.ErrDecisionUnavailable) || errors.Is(err, platformpolicy.ErrMissing) {
 				Fail(c, logger, apperror.Unavailable("authorization decision is unavailable", err))
 				return
 			}
 			Fail(c, logger, apperror.Forbidden("permission denied"))
 			return
 		}
-		if requirement.Scope == platformauthz.ScopePlatform {
+		if platformAdministrationRoute(c.FullPath()) {
 			c.Request = c.Request.WithContext(applicationdomain.WithPlatformAdministration(c.Request.Context()))
 		}
 		c.Next()
 	}
 }
 
-func applicationHTTPRequirement(route string) (platformauthz.Requirement, bool) {
-	requirements := map[string]platformauthz.Requirement{
-		"/api/v1/applications/create":                         {Resource: "application.catalog", Action: "create", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/update":                         {Resource: "application.catalog", Action: "update", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/get":                            {Resource: "application.catalog", Action: "read", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/list":                           {Resource: "application.catalog", Action: "list", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/menus/upsert":                   {Resource: "application.menu", Action: "update", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/menus/get":                      {Resource: "application.menu", Action: "read", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/menus/delete":                   {Resource: "application.menu", Action: "delete", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/menus/draft/list":               {Resource: "application.menu", Action: "list", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/menus/publish":                  {Resource: "application.menu", Action: "publish", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/navigation/get":                 {Resource: "application.navigation", Action: "read", Scope: platformauthz.ScopePrincipal},
-		"/api/v1/applications/navigation/batch-get":           {Resource: "application.navigation", Action: "read", Scope: platformauthz.ScopePrincipal},
-		"/api/v1/applications/tenant-grants/grant":            {Resource: "application.grant", Action: "grant", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/tenant-grants/get":              {Resource: "application.grant", Action: "read", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/tenant-grants/revoke":           {Resource: "application.grant", Action: "revoke", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/tenant-grants/manage/list":      {Resource: "application.grant", Action: "list", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/tenant-grants/manage/batch-get": {Resource: "application.grant", Action: "list", Scope: platformauthz.ScopePlatform},
-		"/api/v1/applications/tenant-grants/list":             {Resource: "application.grant", Action: "list", Scope: platformauthz.ScopePrincipal},
-		"/api/v1/applications/tenant-grants/batch-check":      {Resource: "application.grant", Action: "check", Scope: platformauthz.ScopePrincipal},
-	}
-	requirement, ok := requirements[route]
-	return requirement, ok
+func platformAdministrationRoute(route string) bool {
+	return !strings.Contains(route, "/navigation/") && route != "/api/v1/applications/tenant-grants/list" && route != "/api/v1/applications/tenant-grants/batch-check" && route != "/api/v1/version" && route != "/api/v1/me"
 }
 
 func Authentication(service *auth.Service, logger *slog.Logger, cfg config.Auth) gin.HandlerFunc {

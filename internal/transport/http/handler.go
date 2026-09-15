@@ -8,16 +8,18 @@ import (
 	applicationdomain "github.com/lihongjie0209/application-service/internal/application"
 	"github.com/lihongjie0209/application-service/internal/buildinfo"
 	"github.com/lihongjie0209/application-service/internal/health"
+	"github.com/lihongjie0209/application-service/internal/routepolicy"
 )
 
 type Handler struct {
-	logger       *slog.Logger
-	health       *health.Service
-	applications *applicationdomain.Service
+	logger        *slog.Logger
+	health        *health.Service
+	applications  *applicationdomain.Service
+	routePolicies *routepolicy.Service
 }
 
-func NewHandler(healthService *health.Service, applications *applicationdomain.Service, logger *slog.Logger) *Handler {
-	return &Handler{health: healthService, applications: applications, logger: logger}
+func NewHandler(healthService *health.Service, applications *applicationdomain.Service, routePolicies *routepolicy.Service, logger *slog.Logger) *Handler {
+	return &Handler{health: healthService, applications: applications, routePolicies: routePolicies, logger: logger}
 }
 
 type MeResponseBody struct {

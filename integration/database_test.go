@@ -16,7 +16,9 @@ import (
 	"github.com/lihongjie0209/application-service/internal/config"
 	appdb "github.com/lihongjie0209/application-service/internal/database"
 	"github.com/lihongjie0209/application-service/internal/migration"
+	apppolicy "github.com/lihongjie0209/application-service/internal/routepolicy"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
+	platformpolicy "github.com/lihongjie0209/microservice-platform-go/routepolicy"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -82,6 +84,36 @@ func TestRepositoryAndMigrations(t *testing.T) {
 			repository := applicationdomain.NewRepository(db)
 			ctx = principal.WithContext(ctx, principal.Principal{ID: "integration-test", Type: principal.TypeSystem})
 			transactor := appdb.NewTransactor(db)
+			policyRepository := apppolicy.NewRepository(db, transactor)
+			versionPolicy, err := policyRepository.Get(ctx, "68c5fcb6-2d64-57b7-b393-a753da4b712a")
+			if err != nil || versionPolicy.Expression != "anonymous || authenticated" || versionPolicy.Version != 1 {
+				t.Fatalf("bootstrap version policy = %+v, %v", versionPolicy, err)
+			}
+			var bootstrapActor string
+			if err := db.GetContext(ctx, &bootstrapActor, db.Rebind(`SELECT created_by FROM route_policy_definitions WHERE id=?`), versionPolicy.PolicyID); err != nil || bootstrapActor != "application-service:migration" {
+				t.Fatalf("bootstrap policy actor = %q, %v", bootstrapActor, err)
+			}
+			if err := policyRepository.Set(ctx, apppolicy.SetInput{RouteID: versionPolicy.RouteID, Expression: "authenticated", Description: "integration", Status: "active", ExpectedVersion: versionPolicy.Version}, "integration-test"); err != nil {
+				t.Fatal(err)
+			}
+			updatedPolicy, err := policyRepository.Get(ctx, versionPolicy.RouteID)
+			if err != nil || updatedPolicy.Version != 2 || updatedPolicy.Expression != "authenticated" {
+				t.Fatalf("updated policy = %+v, %v", updatedPolicy, err)
+			}
+			if err := policyRepository.Set(ctx, apppolicy.SetInput{RouteID: versionPolicy.RouteID, Expression: "anonymous", Status: "active", ExpectedVersion: 1}, "integration-test"); !errors.Is(err, apppolicy.ErrStaleVersion) {
+				t.Fatalf("stale policy update error = %v", err)
+			}
+			compiler, err := platformpolicy.NewCompiler()
+			if err != nil {
+				t.Fatal(err)
+			}
+			snapshot := platformpolicy.NewSnapshot(compiler)
+			if err := snapshot.Reload(ctx, policyRepository); err != nil {
+				t.Fatal(err)
+			}
+			if err := snapshot.Evaluate(t.Context(), versionPolicy.RouteID, nil); !errors.Is(err, platformpolicy.ErrDenied) {
+				t.Fatalf("anonymous updated version policy error = %v", err)
+			}
 			write := func(fn func(sqlx.ExtContext) error) error {
 				return transactor.Within(ctx, nil, func(tx *sqlx.Tx) error { return fn(tx) })
 			}

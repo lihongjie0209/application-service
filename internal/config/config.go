@@ -165,7 +165,8 @@ type PSK struct {
 	GRPCMethods []string `mapstructure:"grpc_methods"`
 }
 type Authorization struct {
-	Enabled bool `mapstructure:"enabled"`
+	Enabled               bool          `mapstructure:"enabled"`
+	PolicyRefreshInterval time.Duration `mapstructure:"policy_refresh_interval"`
 }
 type Cron struct {
 	Enabled    bool   `mapstructure:"enabled"`
@@ -438,6 +439,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("auth.psk.http_paths", []string{})
 	v.SetDefault("auth.psk.grpc_methods", []string{})
 	v.SetDefault("authorization.enabled", false)
+	v.SetDefault("authorization.policy_refresh_interval", "30s")
 	v.SetDefault("cron.enabled", true)
 	v.SetDefault("cron.timezone", "Asia/Shanghai")
 	v.SetDefault("cron.sample_spec", "0 */5 * * * *")
@@ -548,6 +550,9 @@ func (c Config) Validate() error {
 	}
 	if c.App.Env == "production" && !c.Authorization.Enabled {
 		return errors.New("authorization must be enabled in production")
+	}
+	if c.Authorization.Enabled && c.Authorization.PolicyRefreshInterval <= 0 {
+		return errors.New("authorization.policy_refresh_interval must be positive")
 	}
 	if c.Authorization.Enabled {
 		if _, ok := c.Outbound.GRPC["authorization"]; !ok {

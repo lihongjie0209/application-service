@@ -17,9 +17,11 @@ import (
 	"github.com/lihongjie0209/application-service/internal/migration"
 	"github.com/lihongjie0209/application-service/internal/observability"
 	"github.com/lihongjie0209/application-service/internal/outbound"
+	"github.com/lihongjie0209/application-service/internal/routepolicy"
 	"github.com/lihongjie0209/application-service/internal/scheduler"
 	grpctransport "github.com/lihongjie0209/application-service/internal/transport/grpc"
 	httptransport "github.com/lihongjie0209/application-service/internal/transport/http"
+	platformpolicy "github.com/lihongjie0209/microservice-platform-go/routepolicy"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
@@ -40,6 +42,7 @@ func New(cfg config.Config) *fx.App {
 		fx.Provide(observability.NewMetrics),
 		outbound.Module,
 		fx.Provide(authorization.New),
+		fx.Provide(routepolicy.NewRepository, platformpolicy.NewCompiler, routepolicy.NewManager, routepolicy.NewService),
 		application.Module,
 		scheduler.Module,
 		grpctransport.Module,
