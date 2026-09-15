@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lihongjie0209/application-service/internal/apperror"
+	"github.com/lihongjie0209/application-service/internal/requestid"
 	"github.com/lihongjie0209/microservice-platform-go/operationlog"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
 	"github.com/lihongjie0209/microservice-platform-go/securitylog"
@@ -45,10 +46,11 @@ func TestTenantGrantMutationRecordsOperationAndSecurityEvents(t *testing.T) {
 	service := &Service{operations: operations, security: security, logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
 	grant := Grant{ID: "grant-1", TenantID: "tenant-1", ApplicationID: "app-1"}
 
-	if err := service.recordMutation(t.Context(), "application.tenant-grant.grant", grant, 2, nil); err != nil {
+	ctx := requestid.WithContext(t.Context(), "request-1")
+	if err := service.recordGrantMutation(ctx, "application.tenant-grant.grant", grant, 2, time.Now().Add(-time.Millisecond), nil); err != nil {
 		t.Fatal(err)
 	}
-	if operations.entry.ResourceID != grant.ID || !operations.entry.Succeeded || security.entry.EventType != securitylog.EventTenantApplicationGrant || security.entry.TenantID != grant.TenantID {
+	if operations.entry.ResourceID != grant.ID || !operations.entry.Succeeded || operations.entry.Duration <= 0 || operations.entry.RequestID != "request-1" || security.entry.EventType != securitylog.EventTenantApplicationGrant || security.entry.TenantID != grant.TenantID || security.entry.RequestID != "request-1" {
 		t.Fatalf("operation=%+v security=%+v", operations.entry, security.entry)
 	}
 }
@@ -56,7 +58,7 @@ func TestTenantGrantMutationRecordsOperationAndSecurityEvents(t *testing.T) {
 func TestTenantGrantMutationFailsClosedWhenSecurityEventCannotPublish(t *testing.T) {
 	security := &securityRecorderStub{err: errors.New("unavailable"), failClosed: true}
 	service := &Service{security: security, logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
-	err := service.recordMutation(t.Context(), "application.tenant-grant.revoke", Grant{ID: "grant-1"}, 1, nil)
+	err := service.recordGrantMutation(t.Context(), "application.tenant-grant.revoke", Grant{ID: "grant-1"}, 1, time.Now(), nil)
 	if appErrorCode(err) != apperror.CodeDependencyUnavailable {
 		t.Fatalf("recordMutation() error = %#v", err)
 	}

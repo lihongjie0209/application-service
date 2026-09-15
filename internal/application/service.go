@@ -16,6 +16,7 @@ import (
 	"github.com/lihongjie0209/application-service/internal/apperror"
 	"github.com/lihongjie0209/application-service/internal/cache"
 	"github.com/lihongjie0209/application-service/internal/database"
+	"github.com/lihongjie0209/application-service/internal/requestid"
 	"github.com/lihongjie0209/microservice-platform-go/distlock"
 	platformevents "github.com/lihongjie0209/microservice-platform-go/eventbus"
 	"github.com/lihongjie0209/microservice-platform-go/operationlog"
@@ -59,6 +60,7 @@ var componentSuffixPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,127}(?:\.[a-
 var routeSegmentPattern = regexp.MustCompile(`[^a-z0-9]+`)
 
 func (s *Service) CreateApplication(ctx context.Context, in ApplicationInput) (Application, error) {
+	started := time.Now()
 	actor, err := actor(ctx)
 	if err != nil {
 		return Application{}, err
@@ -75,9 +77,11 @@ func (s *Service) CreateApplication(ctx context.Context, in ApplicationInput) (A
 		}
 		return s.addEvent(ctx, tx, "platform.application.catalog.changed.v1", "platform.application.v1.ApplicationChanged", v.ID, "application", "", v.ID, actor, now, &applicationv1.ApplicationChangedEvent{Application: toProtoApplication(v), ChangeType: "created"})
 	})
-	return v, translate(err)
+	resultErr := translate(err)
+	return v, s.recordOperation(ctx, "application.create", "application", v.ID, v.ID, map[string]any{"code": v.Code}, started, resultErr)
 }
 func (s *Service) UpdateApplication(ctx context.Context, id string, in ApplicationInput, expected int64) (Application, error) {
+	started := time.Now()
 	if expected < 1 {
 		return Application{}, apperror.Invalid("version must be positive", nil)
 	}
@@ -114,7 +118,8 @@ func (s *Service) UpdateApplication(ctx context.Context, id string, in Applicati
 		}
 		return nil
 	})
-	return v, translate(err)
+	resultErr := translate(err)
+	return v, s.recordOperation(ctx, "application.update", "application", v.ID, v.ID, map[string]any{"expected_version": expected}, started, resultErr)
 }
 func (s *Service) GetApplication(ctx context.Context, id string) (Application, error) {
 	v, err := s.repository.GetApplication(ctx, strings.TrimSpace(id))
@@ -150,6 +155,7 @@ func (s *Service) SearchApplications(ctx context.Context, keyword, status string
 	return Page[Application]{Items: items, Total: total, Page: page, PageSize: pageSize}, translate(err)
 }
 func (s *Service) UpsertMenu(ctx context.Context, v Menu, expected int64) (Menu, error) {
+	started := time.Now()
 	actor, err := actor(ctx)
 	if err != nil {
 		return Menu{}, err
@@ -175,9 +181,11 @@ func (s *Service) UpsertMenu(ctx context.Context, v Menu, expected int64) (Menu,
 	}
 	v.UpdatedAt, v.UpdatedBy = now, actor
 	err = s.transactor.Within(ctx, nil, func(tx *sqlx.Tx) error { return s.repository.UpsertMenu(ctx, tx, v, expected) })
-	return v, translate(err)
+	resultErr := translate(err)
+	return v, s.recordOperation(ctx, "application.menu.upsert", "application_menu", v.ID, v.ApplicationID, map[string]any{"expected_version": expected, "menu_code": v.Code}, started, resultErr)
 }
 func (s *Service) DeleteMenu(ctx context.Context, id string, expected int64) error {
+	started := time.Now()
 	actor, err := actor(ctx)
 	if err != nil {
 		return err
@@ -198,13 +206,15 @@ func (s *Service) DeleteMenu(ctx context.Context, id string, expected int64) err
 			return apperror.Conflict("menu with children cannot be deleted", nil)
 		}
 	}
-	return translate(s.transactor.Within(ctx, nil, func(tx *sqlx.Tx) error { return s.repository.DeleteMenu(ctx, tx, id, expected, s.now(), actor) }))
+	resultErr := translate(s.transactor.Within(ctx, nil, func(tx *sqlx.Tx) error { return s.repository.DeleteMenu(ctx, tx, id, expected, s.now(), actor) }))
+	return s.recordOperation(ctx, "application.menu.delete", "application_menu", id, menu.ApplicationID, map[string]any{"expected_version": expected}, started, resultErr)
 }
 func (s *Service) ListMenuDraft(ctx context.Context, appID string) ([]Menu, error) {
 	items, err := s.repository.ListDraftMenus(ctx, strings.TrimSpace(appID))
 	return items, translate(err)
 }
 func (s *Service) PublishMenus(ctx context.Context, appID string, appVersion int64, comment string) (MenuRelease, []Menu, error) {
+	started := time.Now()
 	actor, err := actor(ctx)
 	if err != nil {
 		return MenuRelease{}, nil, err
@@ -225,7 +235,10 @@ func (s *Service) PublishMenus(ctx context.Context, appID string, appVersion int
 	if !acquired {
 		return MenuRelease{}, nil, apperror.Conflict("menu publication is already running", nil)
 	}
-	return release, menus, translate(err)
+	resultErr := translate(err)
+	operationErr := s.recordOperation(ctx, "application.menu.publish", "menu_release", release.ID, appID, map[string]any{"application_version": appVersion}, started, resultErr)
+	securityErr := s.recordSecurity(ctx, securitylog.EventApplicationMenuPublished, "menu_release", release.ID, "", appID, map[string]any{"application_version": appVersion}, resultErr)
+	return release, menus, preferMutationError(resultErr, securityErr, operationErr)
 }
 
 func (s *Service) publishMenusWithLease(ctx context.Context, appID string, appVersion int64, comment, actor string) (MenuRelease, []Menu, error) {
@@ -364,6 +377,7 @@ func uniqueApplicationIDs(values []string) ([]string, error) {
 	return ids, nil
 }
 func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.Time, until *time.Time, source, entitlements string, expected int64) (Grant, error) {
+	started := time.Now()
 	actor, err := actor(ctx)
 	if err != nil {
 		return Grant{}, err
@@ -420,7 +434,7 @@ func (s *Service) Grant(ctx context.Context, tenantID, appID string, from time.T
 		return s.addSearchProjectionEvent(ctx, tx, application, current, actor, now)
 	})
 	resultErr := translate(err)
-	return current, s.recordMutation(ctx, "application.tenant-grant.grant", current, expected, resultErr)
+	return current, s.recordGrantMutation(ctx, "application.tenant-grant.grant", current, expected, started, resultErr)
 }
 func (s *Service) GetGrant(ctx context.Context, tenantID, appID string) (Grant, error) {
 	tenantID, appID = strings.TrimSpace(tenantID), strings.TrimSpace(appID)
@@ -434,11 +448,27 @@ func (s *Service) GetGrant(ctx context.Context, tenantID, appID string) (Grant, 
 	return v, translate(err)
 }
 
-func (s *Service) recordMutation(ctx context.Context, operation string, grant Grant, expected int64, resultErr error) error {
-	succeeded := resultErr == nil
+func (s *Service) recordGrantMutation(ctx context.Context, operation string, grant Grant, expected int64, started time.Time, resultErr error) error {
 	metadata := map[string]any{"tenant_id": grant.TenantID, "expected_version": expected, "operation": operation}
+	operationErr := s.recordOperation(ctx, operation, "tenant_application_grant", grant.ID, grant.ApplicationID, metadata, started, resultErr)
+	securityErr := s.recordSecurity(ctx, securitylog.EventTenantApplicationGrant, "tenant_application_grant", grant.ID, grant.TenantID, grant.ApplicationID, metadata, resultErr)
+	return preferMutationError(resultErr, securityErr, operationErr)
+}
+
+func preferMutationError(businessErr, securityErr, operationErr error) error {
+	if businessErr != nil {
+		return businessErr
+	}
+	if securityErr != nil {
+		return securityErr
+	}
+	return operationErr
+}
+
+func (s *Service) recordOperation(ctx context.Context, operation, resourceType, resourceID, applicationID string, request any, started time.Time, resultErr error) error {
 	if s.operations != nil {
-		entry := operationlog.Entry{Operation: operation, ResourceType: "tenant_application_grant", ResourceID: grant.ID, ApplicationID: grant.ApplicationID, Source: "application-service", Protocol: "internal", Request: metadata, Succeeded: succeeded}
+		requestID, _ := requestid.FromContext(ctx)
+		entry := operationlog.Entry{Operation: operation, ResourceType: resourceType, ResourceID: resourceID, ApplicationID: applicationID, Source: "application-service", Protocol: "internal", Request: request, RequestID: requestID, Duration: time.Since(started), Succeeded: resultErr == nil}
 		if resultErr != nil {
 			entry.ErrorMessage = resultErr.Error()
 		}
@@ -446,11 +476,18 @@ func (s *Service) recordMutation(ctx context.Context, operation string, grant Gr
 			if resultErr == nil {
 				return apperror.Unavailable("operation log unavailable", logErr)
 			}
-			s.logger.ErrorContext(ctx, "record tenant application operation", "operation", operation, "error", logErr)
+			if s.logger != nil {
+				s.logger.ErrorContext(ctx, "record application operation", "operation", operation, "error", logErr)
+			}
 		}
 	}
+	return resultErr
+}
+
+func (s *Service) recordSecurity(ctx context.Context, eventType securitylog.EventType, subjectType, subjectID, tenantID, applicationID string, metadata any, resultErr error) error {
 	if s.security != nil {
-		entry := securitylog.Entry{EventType: securitylog.EventTenantApplicationGrant, SubjectID: grant.ID, SubjectType: "tenant_application_grant", TenantID: grant.TenantID, ApplicationID: grant.ApplicationID, Succeeded: succeeded, Metadata: metadata}
+		requestID, _ := requestid.FromContext(ctx)
+		entry := securitylog.Entry{EventType: eventType, SubjectID: subjectID, SubjectType: subjectType, TenantID: tenantID, ApplicationID: applicationID, RequestID: requestID, Succeeded: resultErr == nil, Metadata: metadata}
 		if resultErr != nil {
 			entry.ErrorMessage = resultErr.Error()
 		}
@@ -458,12 +495,15 @@ func (s *Service) recordMutation(ctx context.Context, operation string, grant Gr
 			if resultErr == nil && s.security.FailClosed() {
 				return apperror.Unavailable("security log unavailable", logErr)
 			}
-			s.logger.ErrorContext(ctx, "record tenant application security event", "operation", operation, "error", logErr)
+			if s.logger != nil {
+				s.logger.ErrorContext(ctx, "record application security event", "event_type", eventType, "error", logErr)
+			}
 		}
 	}
 	return resultErr
 }
 func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected int64) (Grant, error) {
+	started := time.Now()
 	actor, err := actor(ctx)
 	if err != nil {
 		return Grant{}, err
@@ -492,7 +532,7 @@ func (s *Service) Revoke(ctx context.Context, tenantID, appID string, expected i
 		return s.addEvent(ctx, tx, "platform.search.document.deleted.v1", "platform.search.document.deleted.v1", application.ID, "search_document", tenantID, application.ID, actor, v.UpdatedAt, &searchv1.SearchDocumentDeletedEvent{Document: key})
 	})
 	resultErr := translate(err)
-	return v, s.recordMutation(ctx, "application.tenant-grant.revoke", v, expected, resultErr)
+	return v, s.recordGrantMutation(ctx, "application.tenant-grant.revoke", v, expected, started, resultErr)
 }
 func (s *Service) addSearchProjectionEvent(ctx context.Context, tx *sqlx.Tx, application Application, grant Grant, actor string, at time.Time) error {
 	document := searchDocument(application, grant)
