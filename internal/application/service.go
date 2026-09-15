@@ -16,6 +16,7 @@ import (
 	"github.com/lihongjie0209/application-service/internal/apperror"
 	"github.com/lihongjie0209/application-service/internal/cache"
 	"github.com/lihongjie0209/application-service/internal/database"
+	"github.com/lihongjie0209/microservice-platform-go/distlock"
 	platformevents "github.com/lihongjie0209/microservice-platform-go/eventbus"
 	"github.com/lihongjie0209/microservice-platform-go/principal"
 	applicationv1 "github.com/lihongjie0209/platform-protos/gen/go/platform/application/v1"
@@ -207,20 +208,23 @@ func (s *Service) PublishMenus(ctx context.Context, appID string, appVersion int
 	if s.locker == nil {
 		return MenuRelease{}, nil, apperror.Unavailable("menu publish lock unavailable", nil)
 	}
-	lock, ok, err := s.locker.TryLock(ctx, "application:menu-publish:"+appID, 30*time.Second)
-	if err != nil {
+	var release MenuRelease
+	var menus []Menu
+	acquired, err := distlock.TryWithLock(ctx, s.locker, "application:menu-publish:"+appID, 30*time.Second, func(leaseCtx context.Context) error {
+		var publishErr error
+		release, menus, publishErr = s.publishMenusWithLease(leaseCtx, appID, appVersion, comment, actor)
+		return publishErr
+	})
+	if err != nil && !acquired {
 		return MenuRelease{}, nil, apperror.Unavailable("acquire menu publish lock", err)
 	}
-	if !ok {
+	if !acquired {
 		return MenuRelease{}, nil, apperror.Conflict("menu publication is already running", nil)
 	}
-	defer func() {
-		unlockCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		if e := lock.Unlock(unlockCtx); e != nil {
-			s.logger.Error("release menu publish lock", "application_id", appID, "error", e)
-		}
-	}()
+	return release, menus, translate(err)
+}
+
+func (s *Service) publishMenusWithLease(ctx context.Context, appID string, appVersion int64, comment, actor string) (MenuRelease, []Menu, error) {
 	app, err := s.repository.GetApplication(ctx, appID)
 	if err != nil {
 		return MenuRelease{}, nil, translate(err)
